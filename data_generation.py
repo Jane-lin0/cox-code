@@ -4,7 +4,7 @@ import numpy as np
 # 定义模拟数据生成函数
 def generate_simulated_data(G, N_class, p):
     X = []
-    Y = []
+    # Y = []
     delta = []
     R = []
 
@@ -13,12 +13,13 @@ def generate_simulated_data(G, N_class, p):
         # 生成自变量 X^{(g)}
         X_g = np.random.randn(N_g, p)   # X_g 随机生成
 
-        # 生成观测生存时间 Y^{(g)} 和删失时间 C^{(g)}
-        Y_g = np.random.uniform(0, 10, N_g)
+        # 生成真实生存时间 T^{(g)} , 删失时间 C^{(g)}, 观测生存时间 Y^{(g)}
+        T_g = np.random.uniform(0, 10, N_g)
         C_g = np.random.uniform(0, 10, N_g)
+        Y_g = np.minimum(T_g, C_g)
 
         # 生成删失标记 delta^{(g)}
-        delta_g = (Y_g <= C_g).astype(int)
+        delta_g = (T_g <= C_g).astype(int)
 
         # 生成示性函数矩阵 R^{(g)}
         R_g = np.zeros((N_g, N_g))
@@ -27,11 +28,12 @@ def generate_simulated_data(G, N_class, p):
                 R_g[i, j] = int(Y_g[j] > Y_g[i])
 
         X.append(X_g)
-        Y.append(Y_g)
+        # Y.append(Y_g)
         delta.append(delta_g)
         R.append(R_g)
 
-    return X, Y, delta, R
+    return X, delta, R
+    # return X, Y, delta, R     # R 包含 Y 需要的信息
 
 # # 模拟参数设置
 # G = 5  # 类别数
