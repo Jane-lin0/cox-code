@@ -11,34 +11,36 @@ def get_R_matrix(Y_g):
 
 
 # 定义模拟数据生成函数
-def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25):
+def generate_simulated_data(G, N_class, p, B, method="AR(0.3)", censoring_rate=0.25):
     X = []
     Y = []
     delta = []
     R = []
 
+    if method == "AR(0.3)":
+        rho = 0.3
+        sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
+    elif method == "AR(0.7)":
+        rho = 0.7
+        sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
+    elif method == "band1":
+        sigma = np.vstack([[int(i == j) + 0.4 * int(np.abs(i - j) == 1) for j in range(p)] for i in range(p)])
+    elif method == "band2":
+        sigma = np.vstack([[int(i == j) + 0.6 * int(np.abs(i - j) == 1) + 0.2 * int(np.abs(i - j) == 2)
+                            for j in range(p)] for i in range(p)])
+    elif method == "CS(0.2)":
+        rho = 0.2
+        sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
+    elif method == "CS(0.4)":
+        rho = 0.4
+        sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
+    else:
+        sigma = np.eye(p)
+
     for g in range(G):
         N_g = N_class[g]
+
         # 生成自变量 X^{(g)}
-        if method == "AR(0.3)":
-            rho = 0.3
-            sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
-        elif method == "AR(0.7)":
-            rho = 0.7
-            sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
-        elif method == "band1":
-            sigma = np.vstack([[int(i == j) + 0.4 * int(np.abs(i - j) == 1) for j in range(p)] for i in range(p)])
-        elif method == "band2":
-            sigma = np.vstack([[int(i == j) + 0.6 * int(np.abs(i - j) == 1) + 0.2 * int(np.abs(i - j) == 2)
-                                for j in range(p)] for i in range(p)])
-        elif method == "CS(0.2)":
-            rho = 0.2
-            sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
-        elif method == "CS(0.4)":
-            rho = 0.4
-            sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
-        else:
-            sigma = np.eye(p)
         X_g = np.random.multivariate_normal(mean=np.zeros(p), cov=sigma, size=N_g)
         # X_g = np.random.randn(N_g, p)   # X_g 随机生成
 

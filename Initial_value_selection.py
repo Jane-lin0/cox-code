@@ -1,6 +1,7 @@
 import numpy as np
 from ADMM_related_functions import compute_Delta, group_soft_threshold, gradient_descent_adam_initial
 from data_generation import generate_simulated_data
+from evaluation_indicators import coefficients_estimation_evaluation
 
 
 def initial_value_B(X, delta, R, lambda1,
@@ -8,7 +9,8 @@ def initial_value_B(X, delta, R, lambda1,
     G = len(X)
     p = X[0].shape[1]
     # 初始化变量
-    B1 = np.ones((G, p))
+    # B1 = np.ones((G, p))
+    B1 = np.random.uniform(low=-0.1, high=0.1, size=(G, p))
     B3 = B1
     U2 = np.zeros((G, p))
 
@@ -59,7 +61,15 @@ def initial_value_B(X, delta, R, lambda1,
 # G = 5  # 类别数
 # p = 50  # 变量维度
 # N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
-# B = np.tile(np.array([0.4 if i % 2 == 0 else -0.4 for i in range(p)]), (G, 1))
-# X, delta, R = generate_simulated_data(G, N_class, p, B)
+# B = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]), (G, 1))
+# X, Y, delta, R = generate_simulated_data(G, N_class, p, B)
 #
-# B_initial = initial_value_B(X, delta, R, lambda1=0.01)
+# B_initial = initial_value_B(X, delta, R, lambda1=0.4)
+# SSE = coefficients_estimation_evaluation(B_initial, B)
+# # SSE = 5.6099,
+# # SSE=8.649 (lambda1=0.15),
+# # SSE = 1.439238927455621  (lambda1=0.4) 根据样本数值调整
+# #  SSE=13.676644765113293 (lambda1=0.5)
+#
+# print(f" B_initial:\n{B_initial} \n SSE={SSE}")
+

@@ -1,6 +1,15 @@
 import numpy as np
 
 """ variable selection evaluation """
+def variable_significance(B_mat):
+    p = B_mat.shape[1]
+    significance = np.zeros(p)
+    for j in range(p):
+        if np.linalg.norm(B_mat[:, j]) != 0:
+            significance[j] = 1
+    return significance
+
+
 def calculate_confusion_matrix(actual, predicted):
     TP = np.sum((actual == 1) & (predicted == 1))
     FP = np.sum((actual == 0) & (predicted == 1))
@@ -21,7 +30,7 @@ def calculate_fpr(FP, TN):
     return FP / (FP + TN) if (FP + TN) != 0 else 0
 
 
-""" coefficients estimation evaluation """
+""" coefficients estimation evaluation: SSE """
 def coefficients_estimation_evaluation(B_hat, B_true):
     # res = 0
     # for g in range(B_hat.shape[0]):
@@ -31,21 +40,21 @@ def coefficients_estimation_evaluation(B_hat, B_true):
 
 
 """ predication evaluation: c_index """
-def C_index0(risk_ord, N_ord, Y_ord):
+def C_index0(risk_ord, delta_ord, Y_ord):
     n = len(risk_ord)
     cnt1 = 0  # total pairs
     cnt2 = 0  # concordant pair
 
     for i in range(n - 1):
         for j in range(i + 1, n):
-            if (N_ord[j] == 1) and (Y_ord[i] >= Y_ord[j]):  # j 未删失且 i 的观测生存时间 >= j
+            if (delta_ord[j] == 1) and (Y_ord[i] >= Y_ord[j]):  # j 未删失且 i 的观测生存时间 >= j
                 cnt1 += 1
                 cnt2 += (risk_ord[i] <= risk_ord[j]) or (Y_ord[i] == Y_ord[j])
 
     return cnt2 / cnt1
 
 
-def C_index(beta, N_ord, X_ord, Y_ord):
+def C_index(beta, X_ord, delta_ord, Y_ord):
     n = X_ord.shape[0]
     risk = np.dot(X_ord, beta)   # 计算风险评分
     cnt1 = 0  # total pairs
@@ -53,7 +62,7 @@ def C_index(beta, N_ord, X_ord, Y_ord):
 
     for i in range(n - 1):
         for j in range(i + 1, n):
-            if (N_ord[j] == 1) and (Y_ord[i] >= Y_ord[j]):  # i not censoring
+            if (delta_ord[j] == 1) and (Y_ord[i] >= Y_ord[j]):  # i not censoring
                 cnt1 += 1
                 cnt2 += (risk[i] <= risk[j]) or (Y_ord[i] == Y_ord[j])
 

@@ -1,6 +1,7 @@
 import numpy as np
 from ADMM_related_functions import compute_Delta, group_soft_threshold, gradient_descent_adam_initial
 from data_generation import generate_simulated_data, get_R_matrix
+from evaluation_indicators import coefficients_estimation_evaluation
 
 
 def homogeneity_model(X, delta, R, lambda1,
@@ -41,8 +42,8 @@ def homogeneity_model(X, delta, R, lambda1,
         u = u + (beta3 - beta1)
 
         # 检查收敛条件
-        if (np.linalg.norm(beta1, beta1_old) < delta_m and
-            np.linalg.norm(beta3, beta3_old) < delta_m):
+        if (np.linalg.norm(beta1 - beta1_old) < delta_m and
+            np.linalg.norm(beta3 - beta3_old) < delta_m):
             print(f"Iteration m={m}: beta is calculated ")
             break
 
@@ -54,19 +55,24 @@ def homogeneity_model(X, delta, R, lambda1,
 
 
 
-# 生成模拟数据
-G = 5  # 类别数
-p = 50  # 变量维度
-N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
-B = np.tile(np.array([0.4 if i % 2 == 0 else -0.4 for i in range(p)]), (G, 1))
-X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method="AR(0.3)")
-X = np.vstack(X)
-delta = np.vstack(delta)
-Y = np.vstack(Y)
-R = get_R_matrix(Y)
-
-B_hat = np.empty(shape=(G, p))
-beta_g = homogeneity_model(X, delta, R, lambda1=0.001)
-for g in range(G):
-    B_hat[g] = beta_g
+# # 生成模拟数据
+# G = 5  # 类别数
+# p = 50  # 变量维度
+# N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
+# B = np.tile(np.array([0.4 if i % 2 == 0 else -0.4 for i in range(p)]), (G, 1))
+# X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method="AR(0.3)")
+# X = np.vstack(X)
+# print(delta)
+# delta = np.concatenate(delta)
+# Y = np.concatenate(Y)
+# R = get_R_matrix(Y)
+#
+# B_hat = np.empty(shape=(G, p))
+# beta_g = homogeneity_model(X, delta, R, lambda1=0.001)
+# for g in range(G):
+#     B_hat[g] = beta_g
+#
+# SSE = coefficients_estimation_evaluation(B_hat, B)   # SSE=0.6855371962900849
+#
+# print(f" B1:\n{B_hat} \n SSE={SSE} \n")
 

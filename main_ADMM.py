@@ -1,11 +1,12 @@
 import numpy as np
 from ADMM_related_functions import define_tree_structure, Delta_J, compute_Delta, internal_nodes, all_descendants, \
     children, \
-    group_soft_threshold, gradient_descent_adam, check_nan_inf
+    group_soft_threshold, gradient_descent_adam, check_nan_inf, get_coef_estimation
 from Initial_value_selection import initial_value_B
 from data_generation import generate_simulated_data
 
 
+# max_iter_m=200, max_iter_l=50
 def ADMM_optimize(X, delta, R, lambda1, lambda2,
                   rho=1, eta=0.01, a=3, max_iter_m=200, max_iter_l=50, tolerance_l=1e-5, tolerance_m=1e-6):
     G = len(X)
@@ -17,15 +18,21 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2,
     B1 = initial_value_B(X, delta, R, lambda1=0.01)
     B2 = B1
     B3 = B1
-    Gamma1 = np.vstack([B1, np.zeros((K-G, p))])
+    # Gamma1 = np.vstack([B1, np.zeros((K-G, p))])
+    D_gamma = np.array([[2/3, -1/3, -1/3, 0, 0], [-1/3, 2/3, -1/3, 0, 0], [-1/3, -1/3, 2/3, 0, 0], [0, 0, 0, 1/2, -1/2],
+                       [0, 0, 0, -1/2, 1/2], [1/6, 1/6, 1/6, -1/4, -1/4], [-1/6, -1/6, -1/6, 1/4, 1/4], [1/6, 1/6, 1/6, 1/4, 1/4]])
+    Gamma1 = D_gamma @ B1
     Gamma2 = Gamma1
     U1 = np.zeros((G, p))
     U2 = np.zeros((G, p))
     W1 = np.zeros((K, p))
-    D = np.hstack([np.eye(G), np.zeros((G, K - G))])
+    D = np.array([[1, 0, 0, 0, 0, 1, 0, 1], [0, 1, 0, 0, 0, 1, 0, 1], [0, 0, 1, 0, 0, 1, 0, 1],
+                  [0, 0, 0, 1, 0, 0, 1, 1], [0, 0, 0, 0, 1, 0, 1, 1]])
+    # D = np.hstack([np.eye(G), np.zeros((G, K - G))])
 
     # ADMM算法主循环
     for m in range(max_iter_m):
+        print(f"iteration m = {m} \n")
         B1_old = B1.copy()  # B1_old 为B_m^1, B1 为B_{m+1}^1
 
         # 更新B1
@@ -52,9 +59,6 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2,
                 lambda2_u = 0
             else:
                 lambda2_u = lam - theta / a
-            # elif theta > a * lam:
-            # else:
-            #     lambda2_u = None
             # 更新 Gamma1
             updated_gamma1_children = group_soft_threshold(Gamma2_child - W1_child, lambda2_u / rho)    # lambda2_u
             for i, v in enumerate(child_u):
@@ -81,10 +85,6 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2,
                 lambda1_j = 0
             else:
                 lambda1_j = lambda1 - B1_minus_U2_norm / a
-            # elif B1_minus_U2_norm > a * lambda1:
-            #     lambda1_j = 0
-            # else:
-            #     lambda1_j = None
             B3[:, j] = group_soft_threshold(B1[:, j] - U2[:, j], lambda1_j / rho)
         check_nan_inf(B3, 'B3')
 
@@ -92,6 +92,9 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2,
         U1 = U1 + (B2 - B1)
         U2 = U2 + (B3 - B1)
         W1 = W1 + (Gamma2 - Gamma1)
+        check_nan_inf(U1, 'U1')
+        check_nan_inf(U2, 'U2')
+        check_nan_inf(W1, 'W1')
 
         # 检查收敛条件
         if (compute_Delta(B1, B1_old) < tolerance_m and
@@ -102,9 +105,12 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2,
             print(f"Iteration {m}: ADMM convergence ")
             break
 
+    B_hat = get_coef_estimation(B1, B2, B3, Gamma1, tree)
+
     # 返回结果
     # result = (B1, B2, B3, Gamma1, Gamma2)
-    return B1, B2, B3, Gamma1, Gamma2
+    return B1, B2, B3, Gamma1, Gamma2, B_hat
+
 
 # # 生成模拟数据
 # G = 5  # 类别数

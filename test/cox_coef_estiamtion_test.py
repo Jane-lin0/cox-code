@@ -2,8 +2,10 @@ import numpy as np
 import pandas as pd
 from sksurv.linear_model import CoxPHSurvivalAnalysis
 from lifelines import CoxPHFitter
+from sksurv.metrics import concordance_index_censored
 
 from ADMM_related_functions import compute_Delta
+from evaluation_indicators import C_index
 
 
 def generate_simulated_data_test(N_class, p, beta, censoring_rate=0.25):
@@ -46,6 +48,12 @@ y['col_event'] = delta_g
 y['col_time'] = Y_g
 sksurv_coxph.fit(X_g, y)
 # sksurv_coxph.fit(X_g, list(zip(delta_g, Y_g)))
+
+# 计算风险评分
+risk_scores = sksurv_coxph.predict(X_g)
+# 计算 C-index
+delta_g_bool = delta_g.astype(bool)
+c_index_sksurv = concordance_index_censored(delta_g_bool, Y_g, risk_scores)[0]
 
 
 def Delta_J_test(beta, X_g, delta_g, R_g):
@@ -130,6 +138,8 @@ gradient_coefs_decay = gradient_descent_decay(X_g, delta_g, R_g)
 # 调用 Adam 优化算法估计系数
 gradient_coefs_adam = gradient_descent_adam(X_g, delta_g, R_g)
 
+c_index_adam = C_index(gradient_coefs_adam, X_g, delta_g, Y_g)
+
 # 输出系数估计值
 res = pd.DataFrame({
     'true_coef': beta_true,
@@ -140,4 +150,7 @@ res = pd.DataFrame({
 })
 print(res)
 # adam 优化算法可以较好的估计系数
+
+# 输出 c index
+print(f" c_index_sksurv = {c_index_sksurv} \n c_index_adam = {c_index_adam}")
 

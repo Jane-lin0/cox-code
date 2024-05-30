@@ -3,7 +3,7 @@ import time
 import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
-from ADMM_related_functions import internal_nodes, all_descendants, define_tree_structure
+from ADMM_related_functions import internal_nodes, all_descendants, define_tree_structure, leaf_nodes
 from Initial_value_selection import initial_value_B
 from data_generation import generate_simulated_data
 from main_ADMM import ADMM_optimize
@@ -23,24 +23,14 @@ def calculate_mbic(B, X, delta, R, S_hat):
     return mbic
 
 
-def get_coef_estimation(B1, B2, B3, Gamma1, tree):
-    B_hat = (B1 + B2 + B3) / 3
-    S_hat = len(B_hat)
-    # 提取稀疏结构
-    for i in range(len(B_hat)):
-        for j in range(B_hat.shape[1]):
-            if B3[i, j] == 0:
-                B_hat[i, j] = 0
-    # 提取分组结构
+def get_S_hat(Gamma1, tree):
+    S_hat = len(leaf_nodes(tree))  # 需要再检查，二次更新时如何变化？
     for u in internal_nodes(tree):
         child_u = all_descendants(tree, u)
         Gamma1_child = np.array([Gamma1[v] for v in child_u])
         if np.all(Gamma1_child == 0):
-            S_hat = S_hat - len(child_u) + 1              # 需要再检查
-            B_hat_child_mean = np.array([B_hat[v] for v in child_u]).mean(axis=0)
-            for v in child_u:
-                B_hat[v] = B_hat_child_mean
-    return B_hat, S_hat
+            S_hat = S_hat - len(child_u) + 1
+    return S_hat
 
 
 def grid_search_hyperparameters(parameter_ranges, X, delta, R, tree):
@@ -53,8 +43,9 @@ def grid_search_hyperparameters(parameter_ranges, X, delta, R, tree):
     for lambda1 in parameter_ranges['lambda1']:
         for lambda2 in parameter_ranges['lambda2']:
             # 优化 beta 矩阵 B
-            B1, B2, B3, Gamma1, Gamma2 = ADMM_optimize(X, delta, R, lambda1, lambda2)  # 基于 ADMM 更新
-            B_hat, S_hat = get_coef_estimation(B1, B2, B3, Gamma1, tree)
+            B1, B2, B3, Gamma1, Gamma2, B_hat = ADMM_optimize(X, delta, R, lambda1, lambda2)  # 基于 ADMM 更新
+            # B_hat = get_coef_estimation(B1, B2, B3, Gamma1, tree)
+            S_hat = get_S_hat(Gamma1, tree)
             mbic = calculate_mbic(B_hat, X, delta, R, S_hat)
 
             # 记录每个 lambda1, lambda2 对应的 mbic
@@ -89,24 +80,23 @@ def grid_search_hyperparameters(parameter_ranges, X, delta, R, tree):
     return best_params
 
 
-start_time = time.time()
-
-# 超参数范围
-parameter_ranges = {
-    'lambda1': np.linspace(1e-6, 0.1, 5),
-    'lambda2': np.linspace(1e-6, 0.1, 5)
-}
-G = 5  # 类别数
-p = 50  # 变量维度
-N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
-B = np.tile(np.array([0.5 if i % 2 == 0 else -0.5 for i in range(p)]), (G, 1))
-X, delta, R = generate_simulated_data(G, N_class, p, B, method="AR(0.3)")  # 生成模拟数据
-
-tree = define_tree_structure()
-# 执行网格搜索
-best_params = grid_search_hyperparameters(parameter_ranges, X, delta, R, tree)
-
-# 计算运行时间
-end_time = time.time()
-running_time = end_time - start_time
-print(f"Elapsed time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f} hours)")
+# start_time = time.time()
+#
+# # 超参数范围
+# parameter_ranges = {
+#     'lambda1': np.linspace(0.001, 0.2, 5),
+#     'lambda2': np.linspace(0.001, 0.2, 5)
+# }
+# G = 5  # 类别数
+# p = 50  # 变量维度
+# N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
+# B = np.tile(np.array([0.5 if i % 2 == 0 else -0.5 for i in range(p)]), (G, 1))
+# X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method="AR(0.3)")  # 生成模拟数据
+#
+# tree = define_tree_structure()
+# # 执行网格搜索
+# best_params = grid_search_hyperparameters(parameter_ranges, X, delta, R, tree)
+#
+# # 计算运行时间
+# running_time = time.time() - start_time
+# print(f"Elapsed time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f} hours)")
