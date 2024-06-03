@@ -101,6 +101,7 @@ def Delta_J(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho, epsilon=1e-5
 
 # Delta_J_analytic
 def Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho):
+    n = X_g.shape[0]  
     # 计算梯度的函数
     check_nan_inf(beta, 'beta')
     # X_beta = np.clip(X_g @ beta, -500, 500)
@@ -108,10 +109,14 @@ def Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho):
     if np.any(r_exp_x_beta == 0):
         print("Division by Zero")
         # sys.exit(1)
-    gradient = - X_g.T @ delta_g / N
-    gradient += X_g.T @ np.diag(np.exp(X_g @ beta)) @ R_g.T @ np.diag(1 / r_exp_x_beta) @ delta_g / N
-    gradient -= rho * (beta2 - beta + u1)
-    gradient -= rho * (beta3 - beta + u2)
+    # gradient = - X_g.T @ delta_g / n
+    # gradient += X_g.T @ np.diag(np.exp(X_g @ beta)) @ R_g.T @ np.diag(1 / r_exp_x_beta) @ delta_g / n
+
+    gradient = (- np.dot(X_g.T, delta_g) + np.dot(X_g.T @ np.diag(np.exp(np.dot(X_g, beta))), R_g.T).dot(np.diag(1 / (R_g.dot(
+            np.exp(np.dot(X_g, beta)))))).dot(delta_g))/n 
+    
+    gradient -= rho  * (beta2 - beta + u1)
+    gradient -= rho  * (beta3 - beta + u2)
     return gradient
 
 # RuntimeWarning: overflow encountered in matmul
@@ -119,19 +124,19 @@ def Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho):
 
 
 def gradient_descent_adam(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho,
-                          eta=0.01, max_iter=30, tol=1e-3, a1=0.9, a2=0.999, epsilon=1e-8):
+                          eta=0.01, max_iter=30, tol=1e-3, a1=0.9, a2=0.999, epsilon=1e-4):  
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
     for i in range(max_iter):
         beta_old = beta.copy()
-        gradient = Delta_J(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho)
+        gradient = Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho)
 
-        # 裁剪梯度
-        clip_value = 0.5   # 缩小为 1/ 10 左右
-        gradient_norm = np.linalg.norm(gradient)
-        if gradient_norm > clip_value:
-            gradient = gradient * (clip_value / gradient_norm)
-            # print("gradient cliped ")
+        # # 裁剪梯度
+        # clip_value = 0.5   # 缩小为 1/ 10 左右
+        # gradient_norm = np.linalg.norm(gradient)
+        # if gradient_norm > clip_value:
+        #     gradient = gradient * (clip_value / gradient_norm)
+        #     # print("gradient cliped ")
 
         # 更新一阶矩估计和二阶矩估计
         m = a1 * m + (1 - a1) * gradient
@@ -141,8 +146,8 @@ def gradient_descent_adam(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho,
         v_hat = v / (1 - a2 ** (i + 1))
 
         # 更新参数
-        beta -= eta * m_hat / np.sqrt(v_hat)
-        # beta -= eta * m_hat / (np.sqrt(v_hat) + epsilon)
+        #beta -= eta * m_hat / np.sqrt(v_hat)
+        beta -= eta * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # 检查收敛条件
         if np.linalg.norm(beta - beta_old) < tol:
@@ -152,13 +157,14 @@ def gradient_descent_adam(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho,
 
 
 def gradient_descent_adam_initial(beta, X_g, delta_g, R_g, beta3, u2, rho,
-                          eta=0.1, max_iter=50, tol=1e-6, a1=0.9, a2=0.999, epsilon=1e-8):
+                          eta=0.1, max_iter=20, tol=1e-3, a1=0.9, a2=0.999, epsilon=1e-4):
+    n = X_g.shape[0]
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
     for i in range(max_iter):
         beta_old = beta.copy()
-        gradient = - np.dot(X_g.T, delta_g) + np.dot(X_g.T @ np.diag(np.exp(np.dot(X_g, beta))), R_g.T).dot(np.diag(1 / (R_g.dot(
-            np.exp(np.dot(X_g, beta)))))).dot(delta_g) - rho * (beta3 - beta + u2)
+        gradient = (- np.dot(X_g.T, delta_g) + np.dot(X_g.T @ np.diag(np.exp(np.dot(X_g, beta))), R_g.T).dot(np.diag(1 / (R_g.dot(
+            np.exp(np.dot(X_g, beta)))))).dot(delta_g))/n - rho * (beta3 - beta + u2)
 
         # 更新一阶矩估计和二阶矩估计
         m = a1 * m + (1 - a1) * gradient
@@ -171,7 +177,7 @@ def gradient_descent_adam_initial(beta, X_g, delta_g, R_g, beta3, u2, rho,
         beta -= eta * m_hat / (np.sqrt(v_hat) + epsilon)
 
         # 检查收敛条件
-        if np.linalg.norm(beta - beta_old) < tol:
+        if compute_Delta(beta, beta_old) < tol:
             # print(f"Iteration {i}: beta_update = {beta}, Convergence reached by Adam")
             break
     return beta
@@ -190,18 +196,31 @@ def group_soft_threshold(x, lambd):
     :return: vector or matrix
     """
     if np.linalg.norm(x) == 0:
-        return np.zeros_like(x)
+        return np.zeros_like(x), 0
     else:
         norm_x = np.linalg.norm(x)
         # norm_x = np.linalg.norm(x, 2)  # 不适合 matrix
         shrinkage_factor = max(1 - lambd / norm_x, 0)   # if norm_x != 0 else 0
         return shrinkage_factor * x
 
+def group_mcp_threshold_matrix(X, lamb=0.1, a=3):  
+    norm_ = np.linalg.norm(X, axis=0)  
+    lambda_ = np.maximum(0, lamb - norm_/a)  
+    shrinkage_factor = np.maximum(0, 1-lambda_ / norm_)  
+    shrinkage_factor = np.where(norm_>0, shrinkage_factor, np.zeros_like(shrinkage_factor))
+    return X * shrinkage_factor
 
-def compute_Delta(X2, X1):
+
+
+def compute_Delta(X2, X1, is_relative=True):
     # 计算两个矩阵之间的变化量
-    X1_squared = np.dot(X1, X1.T)
-    return np.linalg.norm(np.dot(X2, X2.T) - X1_squared)**2 / np.linalg.norm(X1_squared)**2
+    # @LJM
+    if is_relative:  # relative difference
+        return ((X2-X1)**2).sum() / ((X1**2).sum() + 1e-4)
+    else:            # absolute differentce (adjusted by the number of elements in array)
+        return ((X2-X1)**2).sum() / np.prod(X2.shape)
+    # X1_squared = np.dot(X1, X1.T)
+    # return np.linalg.norm(np.dot(X2, X2.T) - X1_squared)**2 / np.linalg.norm(X1_squared)**2
     # return np.linalg.norm(np.dot(X2, X2.T) - X1_squared, 'fro')**2 / np.linalg.norm(X1_squared, 'fro')**2
 
 
@@ -265,6 +284,14 @@ def get_coef_estimation(B1, B2, B3, Gamma1, tree):
                 B_hat[v] = B_hat_child_mean
     return B_hat
 
+def get_coef_estimation2(B3, Gamma1, D):
+    B_hat = D.dot(Gamma1)  
+    # 提取稀疏结构
+    for i in range(len(B_hat)):
+        for j in range(B_hat.shape[1]):
+            if B3[i, j] == 0:
+                B_hat[i, j] = 0
+    return B_hat
 
 # tree = define_tree_structure()
 
