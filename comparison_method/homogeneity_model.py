@@ -4,8 +4,7 @@ from data_generation import generate_simulated_data, get_R_matrix, true_B
 from evaluation_indicators import SSE, C_index
 
 
-def homogeneity_model(X, delta, R, lambda1,
-                    rho=1, eta=0.01, a=3, M=500, L=50, delta_l=1e-5, delta_m=1e-6):
+def homogeneity_beta(X, delta, R, lambda1, rho=1, eta=0.01, a=3, M=500, L=50, tolerance_l=1e-4, delta_dual=5e-5):
 
     p = X.shape[1]
     # 初始化变量
@@ -21,8 +20,8 @@ def homogeneity_model(X, delta, R, lambda1,
         # 更新beta1
         for l in range(L):
             beta1_l_old = beta1.copy()     # 初始化迭代
-            beta1 = gradient_descent_adam_initial(beta1, X, delta, R, beta3, u, rho, eta=eta)
-            if np.linalg.norm(beta1 - beta1_l_old) < delta_l:
+            beta1 = gradient_descent_adam_initial(beta1, X, delta, R, beta3, u, rho, eta=eta, max_iter=1)
+            if np.linalg.norm(beta1 - beta1_l_old)**2 < tolerance_l:
                 # print(f"Iteration {l}:  beta1 update")
                 break
 
@@ -45,9 +44,9 @@ def homogeneity_model(X, delta, R, lambda1,
         u = u + (beta3 - beta1)
 
         # 检查收敛条件
-        if (np.linalg.norm(beta1 - beta1_old) < delta_m and
-            np.linalg.norm(beta3 - beta3_old) < delta_m):
-            print(f"Iteration m={m}: beta is calculated ")
+        if (np.linalg.norm(beta1 - beta1_old)**2 < delta_dual and
+            np.linalg.norm(beta3 - beta3_old)**2 < delta_dual):
+            print(f"Iteration m={m}: homogeneity model convergence ")
             break
 
     beta_hat = (beta1 + beta3) / 2
@@ -57,34 +56,46 @@ def homogeneity_model(X, delta, R, lambda1,
     return beta_hat
 
 
+def homogeneity_model(X, Y, delta, R, G, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5):
+    X = np.vstack(X)        # 所有数据属于同一个 group
+    delta = np.concatenate(delta)
+    Y = np.concatenate(Y)     # 需要 Y 得到 R
+    R = get_R_matrix(Y)
+    # p = X.shape[1]
+    beta = homogeneity_beta(X, delta, R, lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L, tolerance_l=tolerance_l,
+                            delta_dual=delta_dual)
+    # B_hat = np.array([beta for _ in range(G)])
+    B_homo = np.tile(beta, (G, 1))
+    return B_homo
+
+
 if __name__ == "__main__":
     # 生成模拟数据
     G = 5  # 类别数
     p = 50  # 变量维度
+    rho = 0.5
+    eta = 0.1
     np.random.seed(1900)
-    N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
-    N_test = np.array([2000] * G)
+    N_class = np.array([200]*G)   # 每个类别的样本数量
+    N_test = np.array([2000]*G)
+
     data_type = "Band1"  # X 的协方差形式
-    B = true_B(p, B_type=1)
-    X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method=data_type)
+    B_type = 1
+    lambda1 = 0.1
+
+    B = true_B(p, B_type=B_type)
+    X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method=data_type, seed=True)
     X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=data_type)
 
-    X = np.vstack(X)
-    delta = np.concatenate(delta)
-    Y = np.concatenate(Y)
-    R = get_R_matrix(Y)
+    B_homo = homogeneity_model(X, Y, delta, R, G, lambda1=lambda1, rho=rho, eta=eta)
 
-    B_hat = np.empty(shape=(G, p))
-    beta_g = homogeneity_model(X, delta, R, lambda1=0.001)
+    sse_homo = SSE(B_homo, B)
+    print(f" sse_homo={sse_homo} ")
+
+    c_index_homo = []
     for g in range(G):
-        B_hat[g] = beta_g
-
-    SSE = SSE(B_hat, B)
-    print(f" SSE={SSE} ")
-
-    c_index = []
-    for g in range(G):
-        c_index_g = C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g])
-        c_index.append(c_index_g)
+        c_index_g = C_index(B_homo[g], X_test[g], delta_test[g], Y_test[g])
+        c_index_homo.append(c_index_g)
+    print(f"c_index_homo={np.mean(c_index_homo)}")
 
 

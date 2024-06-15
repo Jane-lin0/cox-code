@@ -37,6 +37,9 @@ def true_B(p, B_type):
 
 
 # 定义模拟数据生成函数
+# def generate_simulated_data(G, N_class, p, B, method="AR(0.3)", censoring_rate=0.25, seed=False):
+#     if seed:
+#         np.random.seed(1900)
 def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25, seed=False):
     if seed:
         np.random.seed(1900)

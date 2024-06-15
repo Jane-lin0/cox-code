@@ -45,7 +45,8 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter
         for l in range(max_iter_l):
             B1_l_old = B1.copy()      # 初始化迭代
             for g in range(G):
-                B1[g] = gradient_descent_adam(B1[g], X[g], delta[g], R[g], B2[g], B3[g], U1[g], U2[g], N, rho, eta=eta*(0.95)**1, max_iter=1)
+                B1[g] = gradient_descent_adam(B1[g], X[g], delta[g], R[g], B2[g], B3[g], U1[g], U2[g], N, rho,
+                                              eta=eta*(0.95)**1, max_iter=1)
                 # B1[g] = B1[g] - eta * Delta_J(B1[g], B2[g], B3[g], U1[g], U2[g], X[g], delta[g], R[g], N, rho)
             if compute_Delta(B1, B1_l_old, is_relative=False) < tolerance_l:
                 # print(f"Iteration {l}:  B1 update")
