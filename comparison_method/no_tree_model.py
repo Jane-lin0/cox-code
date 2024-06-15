@@ -1,10 +1,12 @@
 import numpy as np
-from ADMM_related_functions import compute_Delta, group_soft_threshold, gradient_descent_adam_initial
-from data_generation import generate_simulated_data
+from related_functions import compute_Delta, group_soft_threshold, gradient_descent_adam_initial
+from Initial_value_selection import initial_value_B
+from data_generation import generate_simulated_data, true_B
+from evaluation_indicators import SSE, C_index
 
 
 def beta_estimation(X_g, delta_g, R_g, lambda1,
-                    rho=1, eta=0.01, a=3, M=500, L=50, delta_l=1e-5, delta_m=1e-6):
+                    rho=1, eta=0.1, a=3, M=200, L=50, delta_l=1e-5, delta_m=1e-6):
 
     p = X_g.shape[1]
     # 初始化变量
@@ -28,21 +30,24 @@ def beta_estimation(X_g, delta_g, R_g, lambda1,
         # 更新beta3
         beta3_old = beta3.copy()
         for j in range(p):
-            beta1_minus_u_abs = np.abs(beta1[j] - u[j])
-            if beta1_minus_u_abs <= a * lambda1:
-                lambda1_j = lambda1 - beta1_minus_u_abs / a
-            elif beta1_minus_u_abs > a * lambda1:
-                lambda1_j = 0
+            if True:
+                beta3[j] = group_soft_threshold(beta1[j] - u[j], lambda1 / rho)  # lasso
             else:
-                lambda1_j = None
-            beta3[j] = group_soft_threshold(beta1[j] - u[j], lambda1_j / rho)    # lambda1_j
+                beta1_minus_u_abs = np.abs(beta1[j] - u[j])       # MCP
+                if beta1_minus_u_abs <= a * lambda1:
+                    lambda1_j = lambda1 - beta1_minus_u_abs / a
+                elif beta1_minus_u_abs > a * lambda1:
+                    lambda1_j = 0
+                else:
+                    lambda1_j = None
+                beta3[j] = group_soft_threshold(beta1[j] - u[j], lambda1_j / rho)     # lambda1_j
 
         # 更新 u
         u = u + (beta3 - beta1)
 
         # 检查收敛条件
-        if (np.linalg.norm(beta1, beta1_old) < delta_m and
-            np.linalg.norm(beta3, beta3_old) < delta_m):
+        if (np.linalg.norm(beta1 - beta1_old) < delta_m and
+            np.linalg.norm(beta3 - beta3_old) < delta_m):
             print(f"Iteration m={m}: beta is calculated ")
             break
 
@@ -53,17 +58,42 @@ def beta_estimation(X_g, delta_g, R_g, lambda1,
     return beta_hat
 
 
+def no_tree_model(X, delta, R, lambda1,
+                  rho=1, eta=0.1, a=3, M=200, L=50, delta_l=1e-5, delta_m=1e-6):
+    G = len(X)
+    p = X[0].shape[1]
+    B_hat = np.zeros((G, p))
+    for g in range(G):
+        beta_g = beta_estimation(X[g], delta[g], R[g], lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L, delta_l=delta_l, delta_m=delta_m)
+        B_hat[g] = beta_g
+    return B_hat
 
-# # 生成模拟数据
-# G = 5  # 类别数
-# p = 50  # 变量维度
-# N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
-# B = np.tile(np.array([0.4 if i % 2 == 0 else -0.4 for i in range(p)]), (G, 1))
-# X, delta, R = generate_simulated_data(G, N_class, p, B, method="AR(0.3)")
-#
-# B_hat = np.empty(shape=(G, p))
-# for g in range(G):
-#     beta_g = beta_estimation(X[g], delta[g], R[g], lambda1=0.001)
-#     B_hat[g] = beta_g
 
-    # B_initial = initial_value_B(X, delta, R, lambda1=0.01)
+
+if __name__ == "__main__":
+    # 生成模拟数据
+    G = 5  # 类别数
+    p = 50  # 变量维度
+    N_class = np.array([200] * G)   # 每个类别的样本数量
+    N_test = np.array([2000] * G)
+    data_type = "Band1"  # X 的协方差形式
+    B_type = 1
+
+    B = true_B(p, B_type=B_type)
+    X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method=data_type)
+    X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=data_type)
+
+    B_hat = no_tree_model(X, delta, R, lambda1=0.1)
+    # B_hat = np.zeros_like(B)
+    # for g in range(G):
+    #     beta_g = beta_estimation(X[g], delta[g], R[g], lambda1=0.1)
+    #     B_hat[g] = beta_g
+
+    SSE = SSE(B_hat, B)
+    print(f" SSE={SSE} ")
+
+    c_index = []
+    for g in range(G):
+        c_index_g = C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g])
+        c_index.append(c_index_g)
+

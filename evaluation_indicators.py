@@ -1,12 +1,18 @@
 import numpy as np
 
+from related_functions import internal_nodes, all_descendants, leaf_nodes, children, leaf_parents
+
 """ variable selection evaluation """
-def variable_significance(B_mat):
+
+
+def variable_significance(B_mat, threshold=0.05):
+    G = B_mat.shape[0]
     p = B_mat.shape[1]
-    significance = np.zeros(p)
+    significance = np.ones(p)
     for j in range(p):
-        if np.linalg.norm(B_mat[:, j]) != 0:
-            significance[j] = 1
+        # if np.linalg.norm(B_mat[:, j]) != 0:
+        if np.linalg.norm(B_mat[:, j]) < np.sqrt(G) * threshold:
+            significance[j] = 0
     return significance
 
 
@@ -16,6 +22,7 @@ def calculate_confusion_matrix(actual, predicted):
     TN = np.sum((actual == 0) & (predicted == 0))
     FN = np.sum((actual == 1) & (predicted == 0))
     return TP, FP, TN, FN
+
 
 # actual = np.array([1, 0, 1, 1, 0, 0, 1, 0, 0, 1])
 # predicted = np.array([1, 0, 0, 1, 0, 0, 1, 0, 1, 1])
@@ -31,11 +38,11 @@ def calculate_fpr(FP, TN):
 
 
 """ coefficients estimation evaluation: SSE """
-def coefficients_estimation_evaluation(B_hat, B_true):
+def SSE(B_hat, B_true):
     # res = 0
     # for g in range(B_hat.shape[0]):
     #     res += np.linalg.norm(B_hat[g] - B_true[g])**2
-    res = np.linalg.norm(B_hat - B_true)**2
+    res = np.linalg.norm(B_hat - B_true) ** 2
     return res
 
 
@@ -56,7 +63,7 @@ def C_index0(risk_ord, delta_ord, Y_ord):
 
 def C_index(beta, X_ord, delta_ord, Y_ord):
     n = X_ord.shape[0]
-    risk = np.dot(X_ord, beta)   # 计算风险评分
+    risk = np.dot(X_ord, beta)  # 计算风险评分
     cnt1 = 0  # total pairs
     cnt2 = 0  # concordant pair
 
@@ -74,16 +81,28 @@ def calculate_ri(TP, FP, TN, FN):
     return (TP + TN) / (TP + FP + TN + FN)
 
 
-def calculate_expected_ri(TP, FP, TN, FN):
-    n = TP + FP + TN + FN
-    t1 = (TP + FN) * (TP + FP)
-    t2 = (TN + FN) * (TN + FP)
-    return (t1 + t2) / (n ** 2)
+def calculate_ari(RI_list):
+    mean_RI = np.mean(RI_list)
+    max_RI = np.max(RI_list)
+    return (RI_list - mean_RI) / (max_RI - mean_RI) if (max_RI - mean_RI) != 0 else 0
 
 
-def calculate_max_ri():
-    return 1.0
-
-
-def calculate_ari(RI, expected_RI, max_RI):
-    return (RI - expected_RI) / (max_RI - expected_RI) if (max_RI - expected_RI) != 0 else 0
+def group_num(B, Gamma1, tree):
+    if Gamma1 is None:         # no tree、homogeneity model 的结果只有 B
+        if np.array_equal(B, np.tile(np.unique(B, axis=0), (len(B), 1))):
+            G = 1
+        else:
+            G = len(leaf_nodes(tree))
+            for u in leaf_parents(tree):
+                child_u = children(tree, u)
+                B_child = np.array([B[v] for v in child_u])
+                if np.array_equal(B_child, np.tile(np.unique(B_child, axis=0), (len(B_child), 1))):
+                    G = G - len(child_u) + 1
+    else:            # proposed model 结果有 Gamma1，可以进一步减小分组数
+        G = len(leaf_nodes(tree))
+        for u in internal_nodes(tree):
+            child_u = children(tree, u)
+            Gamma1_child = np.array([Gamma1[v] for v in child_u])
+            if np.all(Gamma1_child == 0):
+                G -= len(child_u) - 1
+    return G

@@ -1,7 +1,7 @@
 import numpy as np
-from ADMM_related_functions import compute_Delta, group_soft_threshold, gradient_descent_adam_initial
-from data_generation import generate_simulated_data, get_R_matrix
-from evaluation_indicators import coefficients_estimation_evaluation
+from related_functions import compute_Delta, group_soft_threshold, gradient_descent_adam_initial
+from data_generation import generate_simulated_data, get_R_matrix, true_B
+from evaluation_indicators import SSE, C_index
 
 
 def homogeneity_model(X, delta, R, lambda1,
@@ -29,14 +29,17 @@ def homogeneity_model(X, delta, R, lambda1,
         # 更新beta3
         beta3_old = beta3.copy()
         for j in range(p):
-            beta1_minus_u_abs = np.abs(beta1[j] - u[j])
-            if beta1_minus_u_abs <= a * lambda1:
-                lambda1_j = lambda1 - beta1_minus_u_abs / a
-            elif beta1_minus_u_abs > a * lambda1:
-                lambda1_j = 0
+            if True:
+                beta3[j] = group_soft_threshold(beta1[j] - u[j], lambda1 / rho)    # lasso
             else:
-                lambda1_j = None
-            beta3[j] = group_soft_threshold(beta1[j] - u[j], lambda1_j / rho)    # lambda1_j
+                beta1_minus_u_abs = np.abs(beta1[j] - u[j])   # MCP
+                if beta1_minus_u_abs <= a * lambda1:
+                    lambda1_j = lambda1 - beta1_minus_u_abs / a
+                elif beta1_minus_u_abs > a * lambda1:
+                    lambda1_j = 0
+                else:
+                    lambda1_j = None
+                beta3[j] = group_soft_threshold(beta1[j] - u[j], lambda1_j / rho)    # lambda1_j
 
         # 更新 u
         u = u + (beta3 - beta1)
@@ -54,25 +57,34 @@ def homogeneity_model(X, delta, R, lambda1,
     return beta_hat
 
 
+if __name__ == "__main__":
+    # 生成模拟数据
+    G = 5  # 类别数
+    p = 50  # 变量维度
+    np.random.seed(1900)
+    N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
+    N_test = np.array([2000] * G)
+    data_type = "Band1"  # X 的协方差形式
+    B = true_B(p, B_type=1)
+    X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method=data_type)
+    X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=data_type)
 
-# # 生成模拟数据
-# G = 5  # 类别数
-# p = 50  # 变量维度
-# N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
-# B = np.tile(np.array([0.4 if i % 2 == 0 else -0.4 for i in range(p)]), (G, 1))
-# X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method="AR(0.3)")
-# X = np.vstack(X)
-# print(delta)
-# delta = np.concatenate(delta)
-# Y = np.concatenate(Y)
-# R = get_R_matrix(Y)
-#
-# B_hat = np.empty(shape=(G, p))
-# beta_g = homogeneity_model(X, delta, R, lambda1=0.001)
-# for g in range(G):
-#     B_hat[g] = beta_g
-#
-# SSE = coefficients_estimation_evaluation(B_hat, B)   # SSE=0.6855371962900849
-#
-# print(f" B1:\n{B_hat} \n SSE={SSE} \n")
+    X = np.vstack(X)
+    delta = np.concatenate(delta)
+    Y = np.concatenate(Y)
+    R = get_R_matrix(Y)
+
+    B_hat = np.empty(shape=(G, p))
+    beta_g = homogeneity_model(X, delta, R, lambda1=0.001)
+    for g in range(G):
+        B_hat[g] = beta_g
+
+    SSE = SSE(B_hat, B)
+    print(f" SSE={SSE} ")
+
+    c_index = []
+    for g in range(G):
+        c_index_g = C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g])
+        c_index.append(c_index_g)
+
 

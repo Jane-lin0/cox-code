@@ -1,14 +1,16 @@
 import numpy as np
 import pandas as pd
 from sksurv.linear_model import CoxPHSurvivalAnalysis
-from lifelines import CoxPHFitter
+# from lifelines import CoxPHFitter
 from sksurv.metrics import concordance_index_censored
 
-from ADMM_related_functions import compute_Delta
+from related_functions import compute_Delta
 from evaluation_indicators import C_index
 
 
-def generate_simulated_data_test(N_class, p, beta, censoring_rate=0.25):
+def generate_simulated_data_test(N_class, p, beta, seed=False, censoring_rate=0.25):
+    if seed:
+        np.random.seed(1900)
     N_g = N_class
     # 生成自变量 X^{(g)}
     rho = 0.3
@@ -35,27 +37,6 @@ def generate_simulated_data_test(N_class, p, beta, censoring_rate=0.25):
     return X_g, Y_g, delta_g, R_g
 
 
-# 生成模拟数据
-N_class = 1000
-p = 10
-beta_true = np.random.uniform(low=-10, high=10, size=p)
-X_g, Y_g, delta_g, R_g = generate_simulated_data_test(N_class, p, beta_true)
-
-# 使用 sksurv 拟合 Cox 比例风险模型
-sksurv_coxph = CoxPHSurvivalAnalysis()
-y = np.empty(dtype=[('col_event', bool), ('col_time', np.float64)], shape=X_g.shape[0])
-y['col_event'] = delta_g
-y['col_time'] = Y_g
-sksurv_coxph.fit(X_g, y)
-# sksurv_coxph.fit(X_g, list(zip(delta_g, Y_g)))
-
-# 计算风险评分
-risk_scores = sksurv_coxph.predict(X_g)
-# 计算 C-index
-delta_g_bool = delta_g.astype(bool)
-c_index_sksurv = concordance_index_censored(delta_g_bool, Y_g, risk_scores)[0]
-
-
 def Delta_J_test(beta, X_g, delta_g, R_g):
     # 计算梯度的函数
     # exp_X_beta = np.exp(np.clip(np.dot(X_g, beta), -709, 709))
@@ -65,15 +46,8 @@ def Delta_J_test(beta, X_g, delta_g, R_g):
     return gradient / len(X_g)
 
 
-N_g = len(X_g)
-R_g = np.zeros((N_g, N_g))
-for i in range(N_g):
-    for j in range(N_g):
-        R_g[i, j] = int(Y_g[j] >= Y_g[i])
-
-
 def gradient_descent(X_g, delta_g, R_g, eta=0.001, max_iter=200, delta_l=1e-5):
-    beta = np.random.uniform(-0.1, 0.1, X_g.shape[1])   # np.random.randn(X_g.shape[1]), np.zeros(X_g.shape[1])
+    beta = np.random.uniform(-0.1, 0.1, X_g.shape[1])  # np.random.randn(X_g.shape[1]), np.zeros(X_g.shape[1])
     # beta_initial = beta.copy()
     for l in range(max_iter):
         beta_l_old = beta.copy()
@@ -102,7 +76,7 @@ def gradient_descent_decay(X_g, delta_g, R_g, eta=0.1, max_iter=500, tol=1e-6, d
 
 
 def gradient_descent_adam(X_g, delta_g, R_g, eta=0.1, max_iter=500, tol=1e-6, a1=0.9,
-                                 a2=0.999, epsilon=1e-8):
+                          a2=0.999, epsilon=1e-8):
     beta = np.random.randn(X_g.shape[1])
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
@@ -129,28 +103,57 @@ def gradient_descent_adam(X_g, delta_g, R_g, eta=0.1, max_iter=500, tol=1e-6, a1
     return beta
 
 
-# 调用梯度下降法估计系数
-gradient_coefs = gradient_descent(X_g, delta_g, R_g)
+if __name__ == "__main__":
+    # 生成模拟数据
+    N_class = 1000
+    p = 10
+    beta_true = np.random.uniform(low=-10, high=10, size=10)
+    X_g, Y_g, delta_g, R_g = generate_simulated_data_test(N_class, p, beta_true)
 
-# 调用梯度下降法（学习率递减）估计系数
-gradient_coefs_decay = gradient_descent_decay(X_g, delta_g, R_g)
+    # 使用 sksurv 拟合 Cox 比例风险模型
+    sksurv_coxph = CoxPHSurvivalAnalysis()
+    y = np.empty(dtype=[('col_event', bool), ('col_time', np.float64)], shape=X_g.shape[0])
+    y['col_event'] = delta_g
+    y['col_time'] = Y_g
+    sksurv_coxph.fit(X_g, y)
+    # sksurv_coxph.fit(X_g, list(zip(delta_g, Y_g)))
 
-# 调用 Adam 优化算法估计系数
-gradient_coefs_adam = gradient_descent_adam(X_g, delta_g, R_g)
+    # 计算风险评分
+    risk_scores = sksurv_coxph.predict(X_g)
+    # 计算 C-index
+    delta_g_bool = delta_g.astype(bool)
+    c_index_sksurv = concordance_index_censored(delta_g_bool, Y_g, risk_scores)[0]
 
-c_index_adam = C_index(gradient_coefs_adam, X_g, delta_g, Y_g)
 
-# 输出系数估计值
-res = pd.DataFrame({
-    'true_coef': beta_true,
-    'sksurv_coef': sksurv_coxph.coef_,
-    'gradient_coef_adam': gradient_coefs_adam,
-    'gradient_coef_decay': gradient_coefs_decay,
-    # 'gradient_coef': gradient_coefs
-})
-print(res)
-# adam 优化算法可以较好的估计系数
+    N_g = len(X_g)
+    R_g = np.zeros((N_g, N_g))
+    for i in range(N_g):
+        for j in range(N_g):
+            R_g[i, j] = int(Y_g[j] >= Y_g[i])
 
-# 输出 c index
-print(f" c_index_sksurv = {c_index_sksurv} \n c_index_adam = {c_index_adam}")
+
+    # 调用梯度下降法估计系数
+    gradient_coefs = gradient_descent(X_g, delta_g, R_g)
+
+    # 调用梯度下降法（学习率递减）估计系数
+    gradient_coefs_decay = gradient_descent_decay(X_g, delta_g, R_g)
+
+    # 调用 Adam 优化算法估计系数
+    gradient_coefs_adam = gradient_descent_adam(X_g, delta_g, R_g)
+
+    c_index_adam = C_index(gradient_coefs_adam, X_g, delta_g, Y_g)
+
+    # 输出系数估计值
+    res = pd.DataFrame({
+        'true_coef': beta_true,
+        'sksurv_coef': sksurv_coxph.coef_,
+        'gradient_coef_adam': gradient_coefs_adam,
+        'gradient_coef_decay': gradient_coefs_decay,
+        # 'gradient_coef': gradient_coefs
+    })
+    print(res)
+    # adam 优化算法可以较好的估计系数
+
+    # 输出 c index
+    print(f" c_index_sksurv = {c_index_sksurv} \n c_index_adam = {c_index_adam}")
 

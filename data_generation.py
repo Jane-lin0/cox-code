@@ -10,13 +10,38 @@ def get_R_matrix(Y_g):
     return R_g
 
 
-# 定义模拟数据生成函数
-def generate_simulated_data(G, N_class, p, B, method="AR(0.3)", censoring_rate=0.25):
-    X = []
-    Y = []
-    delta = []
-    R = []
+def true_B(p, B_type):
+    # 真实系数
+    if B_type == 1:  # lambda1=0.2, lambda2=0.3
+        B = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
+                         (5, 1))  # 真实 G = 1
+    elif B_type == 2:  # lambda1=0.2, lambda2=1   # lambda2=0.5~1.5
+        B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
+                       (3, 1))  # 真实 G = 2
+        B_G2 = np.tile(np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)]),
+                       (2, 1))
+        B = np.vstack([B_G1, B_G2])
+    elif B_type == 3:
+        B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
+                       (3, 1))  # 真实 G = 3
+        B_G2 = np.hstack([np.array([-0.1 if i % 2 == 0 else 0.1 for i in range(10)]), np.zeros(p - 10)])
+        B_G3 = np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)])
+        B = np.vstack([B_G1, B_G2, B_G3])
+    elif B_type == 4:
+        B_G1 = np.tile(np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)]),
+                       (3, 1))  # 真实 G = 3，系数不同
+        B_G2 = np.hstack([np.array([-0.1 if i % 2 == 0 else 0.1 for i in range(10)]), np.zeros(p - 10)])
+        B_G3 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
+        B = np.vstack([B_G1, B_G2, B_G3])
+    return B
 
+
+# 定义模拟数据生成函数
+def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25, seed=False):
+    if seed:
+        np.random.seed(1900)
+
+    # X 的协方差矩阵
     if method == "AR(0.3)":
         rho = 0.3
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
@@ -37,6 +62,10 @@ def generate_simulated_data(G, N_class, p, B, method="AR(0.3)", censoring_rate=0
     else:
         sigma = np.eye(p)
 
+    X = []
+    Y = []
+    delta = []
+    R = []
     for g in range(G):
         N_g = N_class[g]
 
