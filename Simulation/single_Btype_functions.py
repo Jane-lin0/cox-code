@@ -32,7 +32,7 @@ def single_iteration(G, p, N_train, N_test, B, lambda1, lambda2, lambda1_init, C
     FPR_notree = calculate_fpr(FP_notree, TN_notree)
 
     RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
-    G_num_notree = group_num(B_notree, None, tree)
+    G_num_notree = group_num(B_notree)
 
     sse_notree = SSE(B_notree, B)
     c_index_notree = [C_index(B_notree[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
@@ -60,7 +60,7 @@ def single_iteration(G, p, N_train, N_test, B, lambda1, lambda2, lambda1_init, C
     c_index_proposed = [C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
     # 分组指标
     RI_proposed = calculate_ri(TP_proposed, FP_proposed, TN_proposed, FN_proposed)
-    G_num_proposed = group_num(B_hat, Gamma1, tree)
+    G_num_proposed = group_num(B_hat)
 
     results['proposed']['TPR'] = TPR_proposed
     results['proposed']['FPR'] = FPR_proposed

@@ -6,9 +6,9 @@ from related_functions import generate_latex_table
 from draft_functions import simulate_and_record
 
 
-def run_simulations(repeats):
-    combinations = [(B_type, Correlation_type) for B_type in [1, 2, 3, 4]
-                    for Correlation_type in ["Band1", "Band2", "CS(0.2)", "CS(0.4)"]]   # "AR(0.3)", "AR(0.7)"
+def run_simulations(repeats):  # [1, 2, 3, 4]   # ["Band1", "Band2", "CS(0.2)", "CS(0.4)"]]
+    combinations = [(B_type, Correlation_type) for B_type in [1]
+                    for Correlation_type in ["Band1", "Band2", "CS(0.2)", "CS(0.4)", "AR(0.3)", "AR(0.7)"]]    # "AR(0.3)", "AR(0.7)"
     tasks = [(B_type, Correlation_type, repeat_id) for B_type, Correlation_type in combinations for repeat_id in range(repeats)]
     results = {}
 

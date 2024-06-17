@@ -34,7 +34,7 @@ N_test = np.array([2000]*G)
 
 tree = define_tree_structure()
 B = true_B(p, B_type=B_type)  # 真实系数 B
-G_num = group_num(B, None, tree)
+G_num = group_num(B)
 
 # train data
 X, Y, delta, R = generate_simulated_data(G, N_train, p, B, method=data_type, seed=True)
@@ -50,7 +50,7 @@ TPR_notree = calculate_tpr(TP_notree, FN_notree)
 FPR_notree = calculate_fpr(FP_notree, TN_notree)
 
 RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
-G_num_notree = group_num(B_notree, None, tree)
+G_num_notree = group_num(B_notree)
 
 sse_notree = SSE(B_notree, B)
 c_index_notree = []
@@ -79,7 +79,7 @@ TPR = calculate_tpr(TP, FN)
 FPR = calculate_fpr(FP, TN)
 
 RI = calculate_ri(TP, FP, TN, FN)
-G_num_proposed = group_num(B_hat, Gamma1, tree)
+G_num_proposed = group_num(B_hat)
 
 c_index = []
 for g in range(G):

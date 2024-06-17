@@ -31,7 +31,7 @@ N_test = np.array([2000] * G)
 
 tree = define_tree_structure()
 B = true_B(p, B_type=B_type)  # 真实系数 B
-G_num = group_num(B, None, tree)
+G_num = group_num(B)
 
 # # 超参数    # 运行时间较长，单独计算
 # X, Y, delta, R = generate_simulated_data(G, N_train, p, B, method=Correlation_type)
@@ -60,7 +60,7 @@ for _ in range(2):
     FPR_notree = calculate_fpr(FP_notree, TN_notree)
 
     RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
-    G_num_notree = group_num(B_notree, None, tree)
+    G_num_notree = group_num(B_notree)
 
     sse_notree = SSE(B_notree, B)
     c_index_notree = [C_index(B_notree[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
@@ -90,7 +90,7 @@ for _ in range(2):
     c_index_proposed = [C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
     # 分组指标
     RI_proposed = calculate_ri(TP_proposed, FP_proposed, TN_proposed, FN_proposed)
-    G_num_proposed = group_num(B_hat, Gamma1, tree)
+    G_num_proposed = group_num(B_hat)
 
     # results[key]['proposed']['TP'].append(TP)
     # results[key]['proposed']['FP'].append(FP)

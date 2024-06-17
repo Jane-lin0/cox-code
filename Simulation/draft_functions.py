@@ -27,13 +27,22 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
 
     B = true_B(p, B_type=B_type)  # 真实系数 B
 
-    lambda1, lambda2 = lambda_params(B_type, Correlation_type)
-    lambda1_init = lambda1 / 3
+    # lambda1, lambda2 = lambda_params(B_type, Correlation_type)
 
     # train data
     X, Y, delta, R = generate_simulated_data(G, N_train, p, B, method=Correlation_type)
     # test data
     X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type)
+
+    parameter_ranges = {
+        'lambda1': np.linspace(0.01, 0.5, 8),
+        'lambda2': np.linspace(0.01, 0.5, 8)
+    }
+    # 执行网格搜索
+    best_params = grid_search_hyperparameters(parameter_ranges, X, delta, R, rho=rho, eta=eta)
+    lambda1 = best_params["lambda1"]
+    lambda2 = best_params["lambda2"]
+    lambda1_init = lambda1 / 3
 
     # NO tree method
     B_notree = no_tree_model(X, delta, R, lambda1=lambda1_init, rho=rho, eta=eta)
@@ -45,7 +54,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     FPR_notree = calculate_fpr(FP_notree, TN_notree)
 
     RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
-    G_num_notree = group_num(B_notree, None, tree)
+    G_num_notree = group_num(B_notree)
 
     sse_notree = SSE(B_notree, B)
     c_index_notree = [C_index(B_notree[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
@@ -73,7 +82,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     c_index_proposed = [C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
     # 分组指标
     RI_proposed = calculate_ri(TP_proposed, FP_proposed, TN_proposed, FN_proposed)
-    G_num_proposed = group_num(B_hat, Gamma1, tree)
+    G_num_proposed = group_num(B_hat)
 
     results['proposed']['TPR'].append(TPR_proposed)
     results['proposed']['FPR'].append(FPR_proposed)
@@ -82,14 +91,40 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     results['proposed']['RI'].append(RI_proposed)
     results['proposed']['G'].append(G_num_proposed)
 
-    # 计算平均值和标准差
-    for method, metrics in results.items():
-        for metric, values in metrics.items():
-            mean_value = np.mean(values)
-            std_value = np.std(values)
-            results[method][metric] = {'mean': mean_value, 'std': std_value}
+    # Proposed method
+    B_init = initial_value_B(X, delta, R, lambda1=lambda1_init, B_init=None)
+    B1, B2, B3, Gamma1, Gamma2, B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta,
+                                                      a=3, delta_primal=5e-5, delta_dual=5e-5, B_init=B_init)
+    # 变量选择评估
+    significance_true = variable_significance(B)
+    significance_pred_proposed = variable_significance(B_hat)
+    TP_proposed, FP_proposed, TN_proposed, FN_proposed = calculate_confusion_matrix(significance_true, significance_pred_proposed)
+    TPR_proposed = calculate_tpr(TP_proposed, FN_proposed)
+    FPR_proposed = calculate_fpr(FP_proposed, TN_proposed)
+    # 训练误差
+    sse_proposed = SSE(B_hat, B)
+    # 预测误差
+    c_index_proposed = [C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
+    # 分组指标
+    RI_proposed = calculate_ri(TP_proposed, FP_proposed, TN_proposed, FN_proposed)
+    G_num_proposed = group_num(B_hat)
+
+    results['proposed']['TPR'].append(TPR_proposed)
+    results['proposed']['FPR'].append(FPR_proposed)
+    results['proposed']['SSE'].append(sse_proposed)
+    results['proposed']['c_index'].append(np.mean(c_index_proposed))
+    results['proposed']['RI'].append(RI_proposed)
+    results['proposed']['G'].append(G_num_proposed)
+
 
     return (B_type, Correlation_type, repeat_id), results
+
+    # # 计算平均值和标准差
+    # for method, metrics in results.items():
+    #     for metric, values in metrics.items():
+    #         mean_value = np.mean(values)
+    #         std_value = np.std(values)
+    #         results[method][metric] = {'mean': mean_value, 'std': std_value}
 
 
 def lambda_params(B_type, Correlation_type):

@@ -87,22 +87,25 @@ def calculate_ari(RI_list):
     return (RI_list - mean_RI) / (max_RI - mean_RI) if (max_RI - mean_RI) != 0 else 0
 
 
-def group_num(B, Gamma1, tree):
-    if Gamma1 is None:         # no tree、homogeneity model 的结果只有 B
-        if np.array_equal(B, np.tile(np.unique(B, axis=0), (len(B), 1))):
-            G = 1
-        else:
-            G = len(leaf_nodes(tree))
-            for u in leaf_parents(tree):
-                child_u = children(tree, u)
-                B_child = np.array([B[v] for v in child_u])
-                if np.array_equal(B_child, np.tile(np.unique(B_child, axis=0), (len(B_child), 1))):
-                    G = G - len(child_u) + 1
-    else:            # proposed model 结果有 Gamma1，可以进一步减小分组数
-        G = len(leaf_nodes(tree))
-        for u in internal_nodes(tree):
-            child_u = children(tree, u)
-            Gamma1_child = np.array([Gamma1[v] for v in child_u])
-            if np.all(Gamma1_child == 0):
-                G -= len(child_u) - 1
-    return G
+def group_num(B):
+    B_unique = np.unique(B, axis=0)
+    return len(B_unique)
+
+    # if Gamma1 is None:         # no tree、homogeneity model 的结果只有 B
+    #     if np.array_equal(B, np.tile(np.unique(B, axis=0), (len(B), 1))):
+    #         G = 1
+    #     else:
+    #         G = len(leaf_nodes(tree))
+    #         for u in leaf_parents(tree):
+    #             child_u = children(tree, u)
+    #             B_child = np.array([B[v] for v in child_u])
+    #             if np.array_equal(B_child, np.tile(np.unique(B_child, axis=0), (len(B_child), 1))):
+    #                 G = G - len(child_u) + 1
+    # else:            # proposed model 结果有 Gamma1，可以进一步减小分组数
+    #     G = len(leaf_nodes(tree))
+    #     for u in internal_nodes(tree):
+    #         child_u = children(tree, u)
+    #         Gamma1_child = np.array([Gamma1[v] for v in child_u])
+    #         if np.all(Gamma1_child == 0):
+    #             G -= len(child_u) - 1
+    # return G
