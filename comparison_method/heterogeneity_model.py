@@ -1,9 +1,7 @@
 import numpy as np
-from related_functions import define_tree_structure, compute_Delta, internal_nodes, all_descendants, \
-    group_soft_threshold, gradient_descent_adam, check_nan_inf, get_coef_estimation
+
 from Initial_value_selection import initial_value_B
-from data_generation import generate_simulated_data, true_B
-from evaluation_indicators import SSE, C_index
+from related_functions import compute_Delta, group_soft_threshold
 
 
 def get_matrix_index(i, j, G):
@@ -11,8 +9,9 @@ def get_matrix_index(i, j, G):
     return int(l)
 
 
-def gradient_descent_adam_hetero(beta, X_g, delta_g, R_g, beta3, u, g, G, B1, A, W, N, rho,
+def gradient_descent_adam_hetero(beta, X_g, delta_g, R_g, beta3, u, g, G, B1, A, W, rho,
                           eta=0.1, max_iter=1, tol=1e-6, a1=0.9, a2=0.999, epsilon=1e-8):
+    n_g = len(X_g)
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
     for i in range(max_iter):
@@ -25,14 +24,8 @@ def gradient_descent_adam_hetero(beta, X_g, delta_g, R_g, beta3, u, g, G, B1, A,
             elif g_ > g-1:
                 l = get_matrix_index(g, g_, G)
                 beta_a_w += B1[g_] - beta + A[l] - W[l]
-        gradient = - np.dot(X_g.T, delta_g) / N + np.dot(X_g.T @ np.diag(np.exp(np.dot(X_g, beta))), R_g.T).dot(np.diag(1 / (R_g.dot(
-            np.exp(np.dot(X_g, beta)))))).dot(delta_g) / N - rho * (beta3 - beta + u) - rho * beta_a_w
-
-        # # 裁剪梯度
-        # clip_value = 1
-        # gradient_norm = np.linalg.norm(gradient)
-        # if gradient_norm > clip_value:
-        #     gradient = gradient * (clip_value / gradient_norm)
+        gradient = - np.dot(X_g.T, delta_g) / n_g + np.dot(X_g.T @ np.diag(np.exp(np.dot(X_g, beta))), R_g.T).dot(np.diag(1 / (R_g.dot(
+            np.exp(np.dot(X_g, beta)))))).dot(delta_g) / n_g - rho * (beta3 - beta + u) - rho * beta_a_w
 
         # 更新一阶矩估计和二阶矩估计
         m = a1 * m + (1 - a1) * gradient
@@ -51,13 +44,16 @@ def gradient_descent_adam_hetero(beta, X_g, delta_g, R_g, beta3, u, g, G, B1, A,
     return beta
 
 
-def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, a=3, max_iter_m=100, max_iter_l=30,
-                        tolerance_l=1e-4, delta_dual=5e-5, delta_prime=5e-5):
+def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, a=3, max_iter_m=200, max_iter_l=50,
+                        tolerance_l=1e-4, delta_dual=5e-5, delta_prime=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
-    N = np.sum([len(X[g]) for g in range(G)])
+    # N = np.sum([len(X[g]) for g in range(G)])
     # B1 = initial_value_B(X, delta, R)
-    B1 = np.random.uniform(low=-0.1, high=0.1, size=(G, p))
+    if B_init is None:
+        B1 = np.random.uniform(low=-0.1, high=0.1, size=(G, p))
+    else:
+        B1 = B_init
     B3 = B1.copy()
 
     E = np.zeros((int((G-1)*G/2), G))
@@ -80,13 +76,13 @@ def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
         for l in range(max_iter_l):
             B1_l_old = B1.copy()      # 初始化迭代
             for g in range(G):
-                B1[g] = gradient_descent_adam_hetero(B1[g], X[g], delta[g], R[g], B3[g], U[g], g, G, B1, A, W, N, rho,
+                B1[g] = gradient_descent_adam_hetero(B1[g], X[g], delta[g], R[g], B3[g], U[g], g, G, B1, A, W, rho,
                                                      eta=eta*(0.95), max_iter=1)
                 # B1[g] = B1[g] - eta * Delta_J(B1[g], B2[g], B3[g], U1[g], U2[g], X[g], delta[g], R[g], N, rho)
             if compute_Delta(B1, B1_l_old, is_relative=False) < tolerance_l:
                 # print(f"Iteration {l}:  B1 update")
                 break
-        check_nan_inf(B1, 'B1')
+        # check_nan_inf(B1, 'B1')
 
         # 更新 B3
         B3_old = B3.copy()
@@ -141,13 +137,19 @@ def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
             if B3[i, j] == 0:
                 B_hat[i, j] = 0
 
-    return B1, B3, B_hat
+    return B_hat
+    # return B1, B3, B_hat
 
 
 if __name__ == "__main__":
+    from data_generation import generate_simulated_data, true_B
+    from evaluation_indicators import SSE, C_index, variable_significance, calculate_confusion_matrix, calculate_tpr, \
+    calculate_fpr, calculate_ri, group_labels, calculate_ari, group_num
+    from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
+
     # 生成模拟数据
     G = 5  # 类别数
-    p = 50  # 变量维度
+    p = 100  # 变量维度
     rho = 0.5
     eta = 0.1
     N_class = np.array([200]*G)   # 每个类别的样本数量
@@ -156,25 +158,84 @@ if __name__ == "__main__":
     Correlation_type = "Band1"  # X 的协方差形式
     B_type = 1
 
-    lambda1 = 0.1
-    lambda2 = 0.1
+    parameter_ranges = {
+        'lambda1': np.linspace(0.01, 0.1, 2),
+        'lambda2': np.linspace(0.01, 0.1, 2)
+    }
+
+    results = {}
+    key = (B_type, Correlation_type)
+    results[key] = {
+        'proposed': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
+        'heter': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
+        'homo': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
+        'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []}
+    }
+
     B = true_B(p, B_type=B_type)
+
     X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method=Correlation_type, seed=True)
     X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type)
+    # 执行网格搜索
+    lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, delta, R, rho=rho, eta=eta, method='heter')
+    # lambda1, lambda2 = 0.1, 0.1
 
-    B1, B3, B_hat = heterogeneity_model(X, delta, R, lambda1, lambda2, rho=rho, eta=eta, delta_dual=5e-5)
+    B_init = initial_value_B(X, delta, R, lambda1_heter, rho, eta)
+    B_heter = heterogeneity_model(X, delta, R, lambda1=lambda1_heter, lambda2=lambda2_heter,
+                                  rho=rho, eta=eta, B_init=B_init)
+    # 变量选择评估
+    significance_true = variable_significance(B)
+    significance_pred_heter = variable_significance(B_heter)
+    TP_heter, FP_heter, TN_heter, FN_heter = calculate_confusion_matrix(significance_true, significance_pred_heter)
+    TPR_heter = calculate_tpr(TP_heter, FN_heter)
+    FPR_heter = calculate_fpr(FP_heter, TN_heter)
 
-    sse1 = SSE(B1, B)
-    sse3 = SSE(B3, B)   # SSE
-    sse_heter = SSE(B_hat, B)
+    RI_heter = calculate_ri(TP_heter, FP_heter, TN_heter, FN_heter)
+    labels_true = group_labels(B, N_test)
+    labels_pred_heter = group_labels(B_heter, N_test)
+    ARI_heter = calculate_ari(labels_true, labels_pred_heter)
+    G_num_heter = group_num(B_heter)
 
-    c_index = []
-    for g in range(G):
-        c_index_g = C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g])
-        c_index.append(c_index_g)
+    sse_heter = SSE(B_heter, B)
+    c_index_heter = [C_index(B_heter[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
 
-    print(f"sse_heter={sse_heter} \n c_index={np.mean(c_index)}")
+    results[key]['heter']['TPR'].append(TPR_heter)
+    results[key]['heter']['FPR'].append(FPR_heter)
+    results[key]['heter']['SSE'].append(sse_heter)
+    results[key]['heter']['c_index'].append(np.mean(c_index_heter))
+    results[key]['heter']['RI'].append(RI_heter)
+    results[key]['heter']['ARI'].append(ARI_heter)
+    results[key]['heter']['G'].append(G_num_heter)
+
+    # sse1 = SSE(B1, B)
+    # sse3 = SSE(B3, B)   # SSE
+    # sse_heter = SSE(B_hat, B)
+    # c_index = []
+    # for g in range(G):
+    #     c_index_g = C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g])
+    #     c_index.append(c_index_g)
+    # print(f"sse_heter={sse_heter} \n c_index={np.mean(c_index)}")
 
 
+# lambda1, lambda2 = 0.1, 0.1  (自定义)
+#     sse_heter = 1.31
+#     c index = 0.78
+
+'''（超参数选择）'''
+# # lambda1, lambda2 = 0.01, 0.26         # 计算 B_init, loglog(params_num)
+# sse_heter=1.7370350381422004
+#  c_index=0.7853376138483059
+
+# lambda1, lambda2 = 0.26, 0.38         # 计算 B_init, params_num * 2
+# sse_heter=5.47945520376471
+#  c_index=0.7376391851877224
+
+# lambda1, lambda2 = 0.78, 1
+# sse_heter=10.45270053388961
+#  c_index=0.6240653237921522
+
+# # lambda1, lambda2 = 3, 2.25
+# sse_heter=12.930823981174097
+#  c_index=0.4864501155237019
 
 

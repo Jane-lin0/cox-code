@@ -137,7 +137,7 @@ def Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho):
 
 
 def gradient_descent_adam(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho,
-                          eta=0.01, max_iter=30, tol=1e-3, a1=0.9, a2=0.999, epsilon=1e-4):
+                          eta=0.1, max_iter=1, tol=1e-3, a1=0.9, a2=0.999, epsilon=1e-4):
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
     for i in range(max_iter):
@@ -170,8 +170,38 @@ def gradient_descent_adam(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho,
     return beta
 
 
+def gradient_descent_adam_homo(beta, X, delta, R, beta3, u2, rho,
+                          eta=0.1, max_iter=1, tol=1e-3, a1=0.9, a2=0.999, epsilon=1e-4):
+    m = np.zeros_like(beta)
+    v = np.zeros_like(beta)
+    for i in range(max_iter):
+        beta_old = beta.copy()
+        gradient = 0
+        for g in range(len(X)):   # 分组加总 gradient
+            n_g = X[g].shape[0]
+            gradient += (- np.dot(X[g].T, delta[g]) + np.dot(X[g].T @ np.diag(np.exp(np.dot(X[g], beta))), R[g].T).dot(
+                np.diag(1 / (R[g].dot(np.exp(np.dot(X[g], beta)))))).dot(delta[g]))/n_g - rho * (beta3 - beta + u2)
+
+        # 更新一阶矩估计和二阶矩估计
+        m = a1 * m + (1 - a1) * gradient
+        v = a2 * v + (1 - a2) * gradient ** 2
+        # 矫正一阶矩估计和二阶矩估计的偏差
+        m_hat = m / (1 - a1 ** (i + 1))
+        v_hat = v / (1 - a2 ** (i + 1))
+
+        # 更新参数
+        beta -= eta * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        # 检查收敛条件
+        # if np.linalg.norm(beta - beta_old) < tol:
+        if compute_Delta(beta, beta_old, True) < tol:
+            # print(f"Iteration {i}: beta_update = {beta}, Convergence reached by Adam")
+            break
+    return beta
+
+
 def gradient_descent_adam_initial(beta, X_g, delta_g, R_g, beta3, u2, rho,
-                          eta=0.1, max_iter=20, tol=1e-3, a1=0.9, a2=0.999, epsilon=1e-4):
+                          eta=0.1, max_iter=1, tol=1e-3, a1=0.9, a2=0.999, epsilon=1e-4):
     n = X_g.shape[0]
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
@@ -305,38 +335,41 @@ def get_coef_estimation(B3, Gamma1, D):
 
 
 def generate_latex_table(results):
-    # 并行计算
     table_header = r"""
-                    \begin{table}[htbp]
-                    \centering
-                    \caption{模拟结果（每个单元格是30次重复的平均值（标准差）}
-                    \label{table:simulation_result}
-                    \scalebox{0.8}{
-                    \begin{tabular}{c c c   c c   c c   c  c}
-                    \hline
-                    Example & Correlation & Method & TP  & FP & TPR  & FPR & SSE  & C-index \\
-                    \hline
+    \begin{table}[htbp]
+    \centering
+    \caption{模拟结果（每个单元格是30次重复的平均值（标准差）}
+    \label{table:simulation_result}
+    \scalebox{0.75}{
+    \begin{tabular}{c c c   c c   c c   c c c}
+    \hline
+    Example & Correlation & Method & TPR  & FPR & SSE  & C-index & RI  & ARI & G \\
+    \hline
                     """
 
     table_footer = r"""
-                    \hline
-                    \end{tabular}}
-                    \end{table}
+    \hline
+    \end{tabular}}
+    \end{table}
                     """
 
     rows = []
 
     for (example, correlation), result in results.items():
-        for method in ['proposed', 'no_tree']:
+        for method in ['proposed', 'heter', 'homo', 'no_tree']:
             row = []
             if method == 'proposed':
-                row.append(f"\\multirow{{2}}{{*}}{{{example}}} & \\multirow{{2}}{{*}}{{{correlation}}} & Proposed")
+                row.append(f"\\multirow{{4}}{{*}}{{{example}}} & \\multirow{{4}}{{*}}{{{correlation}}} & Proposed")
+            elif method == 'heter':
+                row.append(f" &  & Heter")
+            elif method == 'homo':
+                row.append(f" &  & Homo")
             else:
                 row.append(" &  & Notree")
 
-            for metric in ['TP', 'FP', 'TPR', 'FPR', 'SSE', 'c_index']:
-                mean = result[1][method][metric]['mean']
-                std = result[1][method][metric]['std']
+            for metric in ['TPR', 'FPR', 'SSE', 'c_index', 'RI', 'ARI', 'G']:
+                mean = result[method][metric]['mean']
+                std = result[method][metric]['std']
                 row.append(f"{mean:.2f} ({std:.2f})")
 
             rows.append(" & ".join(row) + r" \\")
@@ -347,29 +380,31 @@ def generate_latex_table(results):
 
 def generate_latex_table0(results):
     table = "\\begin{table}[htbp]\n\\centering\n\\caption{模拟结果（每个单元格是30次重复的平均值（标准差））}\n"
-    table += "\\label{table:simulation_result}\n\\scalebox{0.90}{\n\\begin{tabular}{c c c   c c   c c   c  c}\n"
+    table += "\\label{table:simulation_result}\n\\scalebox{0.90}{\n\\begin{tabular}{c c c   c c   c c   c c c}\n"
     table += "\\hline\n"
-    table += "Example & Correlation & Method & TP  & FP & TPR  & FPR & SSE  & C-index \\\\\n"
+    table += "Example & Correlation & Method  & TPR  & FPR & SSE  & C-index & RI  & ARI & G \\\\\n"
     table += "\\hline\n"
 
-    for B_type in [1, 2]:
-        for Correlation_type in ["Band1", "AR(0.3)"]:
-            for method in ['proposed', 'no_tree']:
+    for B_type in [1]:
+        for Correlation_type in ["Band1"]:
+            for method in ['proposed', 'heter', 'homo', 'no_tree']:
                 example = B_type
                 correlation = Correlation_type
-                TP = results[(B_type, Correlation_type)][method]['TP']
-                FP = results[(B_type, Correlation_type)][method]['FP']
                 TPR = results[(B_type, Correlation_type)][method]['TPR']
                 FPR = results[(B_type, Correlation_type)][method]['FPR']
                 SSE = results[(B_type, Correlation_type)][method]['SSE']
                 c_index = results[(B_type, Correlation_type)][method]['c_index']
+                RI = results[(B_type, Correlation_type)][method]['RI']
+                ARI = results[(B_type, Correlation_type)][method]['ARI']
+                G = results[(B_type, Correlation_type)][method]['G']
 
                 row = f"{example} & {correlation} & {method.capitalize()} & "
-                row += f"{TP['mean']:.2f} ({TP['std']:.2f}) & {FP['mean']:.2f} ({FP['std']:.2f}) & "
                 row += f"{TPR['mean']:.2f} ({TPR['std']:.2f}) & {FPR['mean']:.2f} ({FPR['std']:.2f}) & "
-                row += f"{SSE['mean']:.2f} ({SSE['std']:.2f}) & {c_index['mean']:.2f} ({c_index['std']:.2f}) \\\\\n"
-
+                row += f"{SSE['mean']:.2f} ({SSE['std']:.2f}) & {c_index['mean']:.2f} ({c_index['std']:.2f}) & "
+                row += f"{RI['mean']:.2f} ({RI['std']:.2f}) & {ARI['mean']:.2f} ({ARI['std']:.2f}) & "
+                row += f"{G['mean']:.2f} ({G['std']:.2f})   \\\\\n "
                 table += row
+
             table += "\n"
 
     table += "\\hline\n"

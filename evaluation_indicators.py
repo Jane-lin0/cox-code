@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.spatial.distance import pdist, squareform
+from sklearn.metrics import adjusted_rand_score
 
 from related_functions import internal_nodes, all_descendants, leaf_nodes, children, leaf_parents
 
@@ -81,31 +83,83 @@ def calculate_ri(TP, FP, TN, FN):
     return (TP + TN) / (TP + FP + TN + FN)
 
 
-def calculate_ari(RI_list):
-    mean_RI = np.mean(RI_list)
-    max_RI = np.max(RI_list)
-    return (RI_list - mean_RI) / (max_RI - mean_RI) if (max_RI - mean_RI) != 0 else 0
+# Adjusted Rand Index
+def calculate_ari(labels_true, labels_pred):
+    ari = adjusted_rand_score(labels_true, labels_pred)
+    return ari
 
 
-def group_num(B):
-    B_unique = np.unique(B, axis=0)
-    return len(B_unique)
+def group_num(B, tol=1e-5):      # 类似 unique，但是是合并相似而不是完全相同的行向量
+    # 计算所有行向量之间的欧氏距离
+    dists = pdist(B, metric='euclidean')
+    # dist_matrix[i,j] = 第 i 行 和 第 j 行 的距离
+    dist_matrix = squareform(dists)
 
-    # if Gamma1 is None:         # no tree、homogeneity model 的结果只有 B
-    #     if np.array_equal(B, np.tile(np.unique(B, axis=0), (len(B), 1))):
-    #         G = 1
-    #     else:
-    #         G = len(leaf_nodes(tree))
-    #         for u in leaf_parents(tree):
-    #             child_u = children(tree, u)
-    #             B_child = np.array([B[v] for v in child_u])
-    #             if np.array_equal(B_child, np.tile(np.unique(B_child, axis=0), (len(B_child), 1))):
-    #                 G = G - len(child_u) + 1
-    # else:            # proposed model 结果有 Gamma1，可以进一步减小分组数
-    #     G = len(leaf_nodes(tree))
-    #     for u in internal_nodes(tree):
-    #         child_u = children(tree, u)
-    #         Gamma1_child = np.array([Gamma1[v] for v in child_u])
-    #         if np.all(Gamma1_child == 0):
-    #             G -= len(child_u) - 1
-    # return G
+    # 初始化一个布尔数组，表示每一行向量是否已被分组
+    grouped = np.zeros(B.shape[0], dtype=bool)
+    num_groups = 0
+    for i in range(B.shape[0]):
+        if not grouped[i]:
+            # 将当前行向量标记为已分组
+            grouped[i] = True
+            # 找出与当前行向量距离小于tol的所有行向量
+            similar = dist_matrix[i] < tol
+            # 将这些行向量也标记为已分组, 后续不再计入组数中
+            grouped[similar] = True
+            num_groups += 1
+
+    return num_groups
+
+
+def group_labels(B, N_list, tol=1e-2):
+    G = B.shape[0]
+    dists = pdist(B, metric='euclidean')
+    dist_matrix = squareform(dists)
+
+    grouped = np.zeros(G, dtype=bool)
+    group_labels = np.zeros(G, dtype=int)
+    group_id = 0
+    for i in range(G):
+        if not grouped[i]:
+            similar = dist_matrix[i] < tol
+            # 将这些行向量的标签设置为当前组的ID
+            group_labels[similar] = group_id
+            grouped[similar] = True
+            group_id += 1
+
+    sample_labels = []
+    for g in range(len(N_list)):
+        # 获取每个group 的标签
+        label = group_labels[g]
+        sample_labels.append(np.repeat(label, N_list[g]))
+
+    return np.concatenate(sample_labels)
+
+
+
+
+# def calculate_ari(RI_list):
+#     mean_RI = np.mean(RI_list)
+#     max_RI = np.max(RI_list)
+#     return (RI_list - mean_RI) / (max_RI - mean_RI) if (max_RI - mean_RI) != 0 else 0
+
+
+# def group_num(B, Gamma1, tree):
+#     if Gamma1 is None:         # no tree、homogeneity model 的结果只有 B
+#         if np.array_equal(B, np.tile(np.unique(B, axis=0), (len(B), 1))):
+#             G = 1
+#         else:
+#             G = len(leaf_nodes(tree))
+#             for u in leaf_parents(tree):
+#                 child_u = children(tree, u)
+#                 B_child = np.array([B[v] for v in child_u])
+#                 if np.array_equal(B_child, np.tile(np.unique(B_child, axis=0), (len(B_child), 1))):
+#                     G = G - len(child_u) + 1
+#     else:            # proposed model 结果有 Gamma1，可以进一步减小分组数
+#         G = len(leaf_nodes(tree))
+#         for u in internal_nodes(tree):
+#             child_u = children(tree, u)
+#             Gamma1_child = np.array([Gamma1[v] for v in child_u])
+#             if np.all(Gamma1_child == 0):
+#                 G -= len(child_u) - 1
+#     return G

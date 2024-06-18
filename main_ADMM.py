@@ -140,7 +140,7 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter
     # B_hat = get_coef_estimation(D, B3, Gamma1, tree)
 
     # 返回结果
-    return B1, B2, B3, Gamma1, Gamma2, B_hat
+    return B_hat
 
 
 # # 生成模拟数据

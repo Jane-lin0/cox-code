@@ -62,7 +62,7 @@ for g in range(G):
 # 运行 ADMM
 # B_init = np.random.uniform(low=-0.1, high=0.1, size=(G, p))
 B_init = initial_value_B(X, delta, R, lambda1=lambda1_init, B_init=None)
-B1, B2, B3, Gamma1, Gamma2, B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta, a=3,
+B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta, a=3,
                                                   delta_primal=5e-5, delta_dual=5e-5, B_init=B_init)
 
 # 训练误差

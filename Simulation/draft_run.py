@@ -1,15 +1,14 @@
 import time
 import numpy as np
-import pandas as pd
 import concurrent.futures
-from related_functions import generate_latex_table
 from draft_functions import simulate_and_record
 
 
-def run_simulations(repeats):  # [1, 2, 3, 4]   # ["Band1", "Band2", "CS(0.2)", "CS(0.4)"]]
+def run_simulations(repeats):  # [1, 2, 3, 4]   # "Band1", "Band2", "CS(0.2)", "CS(0.4)", "AR(0.3)", "AR(0.7)"
     combinations = [(B_type, Correlation_type) for B_type in [1]
-                    for Correlation_type in ["Band1", "Band2", "CS(0.2)", "CS(0.4)", "AR(0.3)", "AR(0.7)"]]    # "AR(0.3)", "AR(0.7)"
-    tasks = [(B_type, Correlation_type, repeat_id) for B_type, Correlation_type in combinations for repeat_id in range(repeats)]
+                    for Correlation_type in ["Band1"]]
+    tasks = [(B_type, Correlation_type, repeat_id) for B_type, Correlation_type in combinations
+             for repeat_id in range(repeats)]
     results = {}
 
     # 使用 ProcessPoolExecutor 并行处理任务
@@ -27,11 +26,13 @@ def run_simulations(repeats):  # [1, 2, 3, 4]   # ["Band1", "Band2", "CS(0.2)", 
 
                 if (B_type, Correlation_type) not in results:
                     results[(B_type, Correlation_type)] = {
-                        'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'G': []},
-                        'proposed': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'G': []}
+                        'proposed': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
+                        'heter': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
+                        'homo': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
+                        'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []}
                     }
 
-                for method in ['no_tree', 'proposed']:
+                for method in ['proposed', 'heter', 'homo', 'no_tree']:
                     for metric in data[method]:
                         results[(B_type, Correlation_type)][method][metric].append(data[method][metric])
 
@@ -40,7 +41,7 @@ def run_simulations(repeats):  # [1, 2, 3, 4]   # ["Band1", "Band2", "CS(0.2)", 
 
     # 计算每个组合的平均值和标准差
     for combination, data in results.items():
-        for method in ['no_tree', 'proposed']:
+        for method in ['proposed', 'heter', 'homo', 'no_tree']:
             for metric in data[method]:
                 mean_value = np.mean(data[method][metric])
                 std_value = np.std(data[method][metric])
@@ -52,7 +53,7 @@ def run_simulations(repeats):  # [1, 2, 3, 4]   # ["Band1", "Band2", "CS(0.2)", 
 if __name__ == "__main__":
     start_time = time.time()
 
-    repeats = 2
+    repeats = 1
     results = run_simulations(repeats=repeats)  # 或者改为100
     print(results)
 

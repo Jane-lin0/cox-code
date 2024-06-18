@@ -18,36 +18,36 @@ if __name__ == "__main__":
     N_train = np.array([200] * G)  # 训练样本
     N_test = np.array([2000] * G)
 
-    # B_type = 1
-    # Correlation_type = "Band1"  # X 的协方差形式
-    # lambda1 = 0.26
-    # lambda2 = 0.11
-    # lambda1_init = 0.1
+    B_type = 1
+    Correlation_type = "Band1"  # X 的协方差形式
+    lambda1 = 0.26
+    lambda2 = 0.11
+    lambda1_init = 0.1
 
-    results = {}
-    for B_type in [1, 2, 3, 4]:
-        for Correlation_type in ["Band1", "Band2", "AR(0.3)", "AR(0.7)", "CS(0.2)", "CS(0.4)"]:
-            print(f"iteration start: B_type = {B_type}, Correlation_type = {Correlation_type}  ")
-            lambda1, lambda2 = lambda_params(B_type, Correlation_type).values()
-            lambda1_init = lambda1 / 2
+    # results = {}
+    # for B_type in [1, 2, 3, 4]:
+    #     for Correlation_type in ["Band1", "Band2", "AR(0.3)", "AR(0.7)", "CS(0.2)", "CS(0.4)"]:
+    #         print(f"iteration start: B_type = {B_type}, Correlation_type = {Correlation_type}  ")
+    #         lambda1, lambda2 = lambda_params(B_type, Correlation_type).values()
+    #         lambda1_init = lambda1 / 2
 
-            B = true_B(p, B_type=B_type)  # 真实系数 B
+    B = true_B(p, B_type=B_type)  # 真实系数 B
 
-            key = (B_type, Correlation_type)
-            results[key] = {
-                'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'G': []},
-                'proposed': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'G': []}
-            }
+    key = (B_type, Correlation_type)
+    results = {
+        'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'G': []},
+        'proposed': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'G': []}
+    }
 
-            iterations = 2
-            with ProcessPoolExecutor() as executor:
-                futures = [executor.submit(single_iteration, G, p, N_train, N_test, B, lambda1, lambda2, lambda1_init,
-                                           Correlation_type, rho, eta) for _ in range(iterations)]
-                for future in as_completed(futures):
-                    result = future.result()
-                    for method in result:
-                        for metric in result[method]:
-                            results[key][method][metric].append(result[method][metric])
+    iterations = 2
+    with ProcessPoolExecutor() as executor:
+        futures = [executor.submit(single_iteration, G, p, N_train, N_test, B, lambda1, lambda2, lambda1_init,
+                                   Correlation_type, rho, eta) for _ in range(iterations)]
+        for future in as_completed(futures):
+            result = future.result()
+            for method in result:
+                for metric in result[method]:
+                    results[key][method][metric].append(result[method][metric])
 
     # 计算平均值和标准差
     for key, methods in results.items():

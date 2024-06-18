@@ -24,26 +24,20 @@ def true_B(p, B_type):
     elif B_type == 3:
         B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
                        (3, 1))  # 真实 G = 3
-        B_G2 = np.hstack([np.array([-0.1 if i % 2 == 0 else 0.1 for i in range(10)]), np.zeros(p - 10)])
-        B_G3 = np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)])
+        B_G2 = np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)])
+        B_G3 = np.hstack([np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(10)]), np.zeros(p - 10)])
         B = np.vstack([B_G1, B_G2, B_G3])
-    elif B_type == 4:
-        B_G1 = np.tile(np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)]),
-                       (3, 1))  # 真实 G = 3，系数不同
-        B_G2 = np.hstack([np.array([-0.1 if i % 2 == 0 else 0.1 for i in range(10)]), np.zeros(p - 10)])
-        B_G3 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
+    elif B_type == 4:  # 真实 G = 3
+        B_G1 = np.tile(np.hstack([np.array([0.7 if i % 2 == 0 else -0.7 for i in range(10)]), np.zeros(p - 10)]),
+                       (2, 1))
+        B_G2 = np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)])
+        B_G3 = np.tile(np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)]),
+                       (2, 1))
         B = np.vstack([B_G1, B_G2, B_G3])
     return B
 
 
-# 定义模拟数据生成函数
-# def generate_simulated_data(G, N_class, p, B, method="AR(0.3)", censoring_rate=0.25, seed=False):
-#     if seed:
-#         np.random.seed(1900)
-def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25, seed=False):
-    if seed:
-        np.random.seed(1900)
-
+def sigma_type(method, p):
     # X 的协方差矩阵
     if method == "AR(0.3)":
         rho = 0.3
@@ -64,11 +58,22 @@ def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25, seed=
         sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
     else:
         sigma = np.eye(p)
+    return sigma
+
+
+# 定义模拟数据生成函数
+
+def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25, seed=False):
+    if seed:
+        np.random.seed(1900)
+
+    sigma = sigma_type(method, p)
 
     X = []
     Y = []
     delta = []
     R = []
+    # labels = []  # 新增的用于保存标签的数据
     for g in range(G):
         N_g = N_class[g]
 
@@ -90,13 +95,16 @@ def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25, seed=
         # 生成示性函数矩阵 R^{(g)}
         R_g = get_R_matrix(Y_g)
 
+        # 为每个数据点添加标签 g
+        # labels_g = np.full(N_g, g)
+
         X.append(X_g)
         Y.append(Y_g)
         delta.append(delta_g)
         R.append(R_g)
-
-    # return X, delta, R
-    return X, Y, delta, R     # R 包含 Y 需要的信息
+        # labels.append(labels_g)
+    # labels = np.concatenate(labels)
+    return X, Y, delta, R
 
 
 # # 模拟参数设置

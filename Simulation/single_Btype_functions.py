@@ -46,7 +46,7 @@ def single_iteration(G, p, N_train, N_test, B, lambda1, lambda2, lambda1_init, C
 
     # Proposed method
     B_init = initial_value_B(X, delta, R, lambda1=lambda1_init, B_init=None)
-    B1, B2, B3, Gamma1, Gamma2, B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=rho,eta=eta,
+    B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=rho,eta=eta,
                                                       a=3, delta_primal=5e-5, delta_dual=5e-5, B_init=B_init)
     # 变量选择评估
     significance_true = variable_significance(B)
