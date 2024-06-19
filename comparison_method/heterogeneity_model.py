@@ -88,7 +88,7 @@ def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
         # 更新 B3
         B3_old = B3.copy()
         for j in range(p):
-            if True:
+            if False:
                 B3[:, j] = group_soft_threshold(B1[:, j] - U[:, j], lambda1 / rho)
             else:
                 B1_minus_U_norm = np.linalg.norm(B1[:, j] - U[:, j])
@@ -104,7 +104,7 @@ def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
         l = 0
         for i in range(G-1):
             for j in range(i+1, G):
-                if True:
+                if False:
                     A[l] = group_soft_threshold(B1[i] - B1[j] + W[l], lambda2 / rho)
                 else:
                     theta = np.linalg.norm(B1[i] - B1[j] + W[l])
@@ -143,11 +143,14 @@ def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
 
 
 if __name__ == "__main__":
+    import time
     from data_generation import generate_simulated_data, true_B
     from evaluation_indicators import SSE, C_index, variable_significance, calculate_confusion_matrix, calculate_tpr, \
     calculate_fpr, calculate_ri, group_labels, calculate_ari, group_num
     from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
     from Hyperparameter.v0_hyperparameter_selection import grid_search_hyperparameters_v0
+
+    start_time = time.time()
 
     # 生成模拟数据
     G = 5  # 类别数
@@ -231,6 +234,8 @@ if __name__ == "__main__":
     results[key]['no_tree']['RI'].append(RI_notree)
     results[key]['no_tree']['ARI'].append(ARI_notree)
     results[key]['no_tree']['G'].append(G_num_notree)
+
+    print(f"heter method running time:{(time.time() - start_time)/60} minutes")
 
 
 
