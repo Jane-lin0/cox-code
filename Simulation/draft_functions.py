@@ -25,7 +25,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     rho = 0.5
     eta = 0.1
     N_train = np.array([200] * G)  # 训练样本
-    N_test = np.array([2000] * G)
+    N_test = np.array([500] * G)
 
     B = true_B(p, B_type=B_type)  # 真实系数 B
 
@@ -36,8 +36,8 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     significance_true = variable_significance(B)  # 变量显著性
     labels_true = group_labels(B, N_test)  # 样本分组标签
 
-    parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 8),
-                        'lambda2': np.linspace(0.01, 0.5, 8)}
+    parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 5),
+                        'lambda2': np.linspace(0.01, 0.5, 3)}
     # 执行网格搜索
     lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, delta, R,
                                                                      rho=rho, eta=eta, method='proposed')
@@ -75,8 +75,9 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     results['proposed']['G'].append(G_num_proposed)
 
     # heter method
+    B_init_heter = initial_value_B(X, delta, R, lambda1_heter, rho, eta)
     B_heter = heterogeneity_model(X, delta, R, lambda1=lambda1_heter, lambda2=lambda2_heter,
-                                  rho=rho, eta=eta, B_init=B_init)
+                                  rho=rho, eta=eta, B_init=B_init_heter)
     # 变量选择评估
     significance_pred_heter = variable_significance(B_heter)
     TP_heter, FP_heter, TN_heter, FN_heter = calculate_confusion_matrix(significance_true, significance_pred_heter)
