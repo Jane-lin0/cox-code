@@ -47,9 +47,9 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta, method='homo')
 
     # Proposed method
-    B_init = initial_value_B(X, delta, R, lambda1=lambda1_proposed, B_init=None)
+    B_init_proposed = initial_value_B(X, delta, R, lambda1=lambda1_proposed, B_init=None)
     B_proposed = ADMM_optimize(X, delta, R, lambda1=lambda1_proposed, lambda2=lambda2_proposed,
-                               rho=rho, eta=eta, B_init=B_init)
+                               rho=rho, eta=eta, B_init=B_init_proposed)
     # 变量选择评估
     significance_pred_proposed = variable_significance(B_proposed)
     TP_proposed, FP_proposed, TN_proposed, FN_proposed = calculate_confusion_matrix(significance_true,

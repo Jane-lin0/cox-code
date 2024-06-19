@@ -2,8 +2,8 @@ import time
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from data_generation import generate_simulated_data, true_B
-from Hyperparameter.hyperparameter_functions import hyperparameter_figure, evaluate_hyperparameters, \
-    evaluate_hyperparameters_shared
+from Hyperparameter.hyperparameter_functions import evaluate_hyperparameters_shared
+# hyperparameter_figure, evaluate_hyperparameters
 
 '''
 将大型数组和复杂对象打包到一个共享的数据字典中，然后在多进程池中传递参数时使用该共享数据字典，确保传递的对象尽量小且独立。
@@ -42,11 +42,11 @@ def grid_search_hyperparameters(parameter_ranges, X, delta, R, rho=0.5, eta=0.1,
             except Exception as exc:
                 print(f"Generated an exception: {exc}")
 
-        try:
-            hyperparameter_figure(parameter_ranges, mbic_records, best_params)
-        except Exception as exc:
-            print(f"plot error: {exc}")
-
+        # try:
+        #     hyperparameter_figure(parameter_ranges, mbic_records, best_params)
+        # except Exception as exc:
+        #     print(f"plot error: {exc}")
+    print(f"method={method}, best params = {best_params}")
     return best_params['lambda1'], best_params['lambda2']
 
     # with ProcessPoolExecutor() as executor:

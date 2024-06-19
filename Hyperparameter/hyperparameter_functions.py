@@ -20,11 +20,9 @@ def calculate_mbic(B, X, delta, R):
     # S_hat = np.sum([int(np.linalg.norm(B[:, j]) != 0) for j in range(B.shape[1])])  # p = B.shape[1]
     # 计算mBIC
     B_unique = np.unique(B, axis=0)   # 删除重复行
-    q_hat = len(B_unique)
     params_num = parameters_num(B_unique)
-    # S_hat = q_hat * np.log(params_num)
-    # S_hat = q_hat * np.log(np.log(params_num))
-    # mbic = (- log_likelihood + S_hat * np.log(N)) / N
+    # mbic = (- log_likelihood + len(B_unique) * np.log(params_num) * np.log(N)) / N
+    # mbic = (- log_likelihood + len(B_unique) * np.log(np.log(params_num)) * np.log(N)) / N
     mbic = (- log_likelihood + params_num * 2) / N
     return mbic
 
@@ -43,11 +41,11 @@ def evaluate_hyperparameters(params, X, delta, R, rho, eta, method):
     if method == 'proposed':
         B_proposed = ADMM_optimize(X, delta, R, lambda1, lambda2, rho=rho, eta=eta)  # 基于 ADMM 更新
         mbic = calculate_mbic(B_proposed, X, delta, R)
-        print(f"proposed method: lambda1={lambda1:.2f}, lambda2={lambda2:.2f}, mBIC={mbic:.2f}")
+        # print(f"proposed method: lambda1={lambda1:.2f}, lambda2={lambda2:.2f}, mBIC={mbic:.2f}")
     elif method == 'heter':
         B_heter = heterogeneity_model(X, delta, R, lambda1, lambda2, rho=rho, eta=eta)
         mbic = calculate_mbic(B_heter, X, delta, R)
-        print(f"heter method: lambda1={lambda1:.2f}, lambda2={lambda2:.2f}, mBIC={mbic:.2f}")
+        # print(f"heter method: lambda1={lambda1:.2f}, lambda2={lambda2:.2f}, mBIC={mbic:.2f}")
 
     return (lambda1, lambda2), mbic
 

@@ -1,6 +1,7 @@
 import numpy as np
 
 from Initial_value_selection import initial_value_B
+from comparison_method.no_tree_model import no_tree_model
 from related_functions import compute_Delta, group_soft_threshold
 
 
@@ -53,7 +54,7 @@ def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
     if B_init is None:
         B1 = np.random.uniform(low=-0.1, high=0.1, size=(G, p))
     else:
-        B1 = B_init
+        B1 = B_init.copy()
     B3 = B1.copy()
 
     E = np.zeros((int((G-1)*G/2), G))
@@ -146,6 +147,7 @@ if __name__ == "__main__":
     from evaluation_indicators import SSE, C_index, variable_significance, calculate_confusion_matrix, calculate_tpr, \
     calculate_fpr, calculate_ri, group_labels, calculate_ari, group_num
     from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
+    from Hyperparameter.v0_hyperparameter_selection import grid_search_hyperparameters_v0
 
     # 生成模拟数据
     G = 5  # 类别数
@@ -153,14 +155,14 @@ if __name__ == "__main__":
     rho = 0.5
     eta = 0.1
     N_class = np.array([200]*G)   # 每个类别的样本数量
-    N_test = np.array([2000] * G)
+    N_test = np.array([500] * G)
 
     Correlation_type = "Band1"  # X 的协方差形式
     B_type = 1
 
     parameter_ranges = {
-        'lambda1': np.linspace(0.01, 0.1, 2),
-        'lambda2': np.linspace(0.01, 0.1, 2)
+        'lambda1': np.linspace(0.01, 0.5, 5),
+        'lambda2': np.linspace(0.01, 0.5, 3)
     }
 
     results = {}
@@ -174,15 +176,15 @@ if __name__ == "__main__":
 
     B = true_B(p, B_type=B_type)
 
-    X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method=Correlation_type, seed=True)
+    X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method=Correlation_type)
     X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type)
     # 执行网格搜索
     lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, delta, R, rho=rho, eta=eta, method='heter')
-    # lambda1, lambda2 = 0.1, 0.1
+    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta, method='no_tree')
 
-    B_init = initial_value_B(X, delta, R, lambda1_heter, rho, eta)
+    B_init_heter = initial_value_B(X, delta, R, lambda1_heter, rho, eta)
     B_heter = heterogeneity_model(X, delta, R, lambda1=lambda1_heter, lambda2=lambda2_heter,
-                                  rho=rho, eta=eta, B_init=B_init)
+                                  rho=rho, eta=eta, B_init=B_init_heter)
     # 变量选择评估
     significance_true = variable_significance(B)
     significance_pred_heter = variable_significance(B_heter)
@@ -207,14 +209,33 @@ if __name__ == "__main__":
     results[key]['heter']['ARI'].append(ARI_heter)
     results[key]['heter']['G'].append(G_num_heter)
 
-    # sse1 = SSE(B1, B)
-    # sse3 = SSE(B3, B)   # SSE
-    # sse_heter = SSE(B_hat, B)
-    # c_index = []
-    # for g in range(G):
-    #     c_index_g = C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g])
-    #     c_index.append(c_index_g)
-    # print(f"sse_heter={sse_heter} \n c_index={np.mean(c_index)}")
+    B_notree = no_tree_model(X, delta, R, lambda1=lambda1_notree, rho=rho, eta=eta)
+    # 变量选择评估
+    significance_pred_notree = variable_significance(B_notree)
+    TP_notree, FP_notree, TN_notree, FN_notree = calculate_confusion_matrix(significance_true, significance_pred_notree)
+    TPR_notree = calculate_tpr(TP_notree, FN_notree)
+    FPR_notree = calculate_fpr(FP_notree, TN_notree)
+
+    RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
+    labels_pred_notree = group_labels(B_notree, N_test)
+    ARI_notree = calculate_ari(labels_true, labels_pred_notree)
+    G_num_notree = group_num(B_notree)
+
+    sse_notree = SSE(B_notree, B)
+    c_index_notree = [C_index(B_notree[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
+
+    results[key]['no_tree']['TPR'].append(TPR_notree)
+    results[key]['no_tree']['FPR'].append(FPR_notree)
+    results[key]['no_tree']['SSE'].append(sse_notree)
+    results[key]['no_tree']['c_index'].append(np.mean(c_index_notree))
+    results[key]['no_tree']['RI'].append(RI_notree)
+    results[key]['no_tree']['ARI'].append(ARI_notree)
+    results[key]['no_tree']['G'].append(G_num_notree)
+
+
+
+
+
 
 
 # lambda1, lambda2 = 0.1, 0.1  (自定义)

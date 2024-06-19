@@ -13,7 +13,7 @@ def get_R_matrix(Y_g):
 def true_B(p, B_type):
     # 真实系数
     if B_type == 1:  # lambda1=0.2, lambda2=0.3
-        B = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
+        B = np.tile(np.hstack([np.array([1 if i % 2 == 0 else -1 for i in range(10)]), np.zeros(p - 10)]),
                          (5, 1))  # 真实 G = 1
     elif B_type == 2:  # lambda1=0.2, lambda2=1   # lambda2=0.5~1.5
         B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),

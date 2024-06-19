@@ -21,12 +21,12 @@ def grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=0.5, eta=0
             mbic = calculate_mbic(B_hat, X, delta, R)
             # 记录每个 lambda1, lambda2 对应的 mbic
             mbic_records[lambda1] = mbic
-            print(f"notree method: lambda1={lambda1:.2f}, mBIC={mbic:.2f}")
+            # print(f"notree method: lambda1={lambda1:.2f}, mBIC={mbic:.2f}")
             # 检查是否找到了更好的参数
             if mbic < best_mbic:
                 best_mbic = mbic
                 best_params = {'lambda1': lambda1, 'mbic': best_mbic}
-        hyperparameter_figure_v0(mbic_records, best_params)
+        # hyperparameter_figure_v0(mbic_records, best_params)
 
     elif method == 'homo':
         for lambda1 in parameter_ranges['lambda1']:
@@ -34,13 +34,13 @@ def grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=0.5, eta=0
             mbic = calculate_mbic(B_hat, X, delta, R)
             # 记录每个 lambda1, lambda2 对应的 mbic
             mbic_records[lambda1] = mbic
-            print(f"homo method: lambda1={lambda1:.2f}, mBIC={mbic:.2f}")
+            # print(f"homo method: lambda1={lambda1:.2f}, mBIC={mbic:.2f}")
             # 检查是否找到了更好的参数
             if mbic < best_mbic:
                 best_mbic = mbic
                 best_params = {'lambda1': lambda1, 'mbic': best_mbic}
-        hyperparameter_figure_v0(mbic_records, best_params)
-
+        # hyperparameter_figure_v0(mbic_records, best_params)
+    print(f"method={method}, best params={best_params}")
     return best_params['lambda1']
 
 
