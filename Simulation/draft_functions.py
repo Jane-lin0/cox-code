@@ -30,9 +30,10 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     B = true_B(p, B_type=B_type)  # 真实系数 B
 
     # train data
-    X, Y, delta, R = generate_simulated_data(G, N_train, p, B, method=Correlation_type)
+    X, Y, delta, R = generate_simulated_data(G, N_train, p, B, method=Correlation_type, seed=repeat_id)
     # test data
-    X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type)
+    X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type,
+                                                                 seed=repeat_id + 1)
     significance_true = variable_significance(B)  # 变量显著性
     labels_true = group_labels(B, N_test)  # 样本分组标签
 

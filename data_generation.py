@@ -61,11 +61,10 @@ def sigma_type(method, p):
     return sigma
 
 
-# 定义模拟数据生成函数
-
-def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25, seed=False):
-    if seed:
-        np.random.seed(1900)
+def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25, seed=None):
+    # 定义模拟数据生成函数
+    if seed is not None:
+        np.random.seed(seed+2000)
 
     sigma = sigma_type(method, p)
 
