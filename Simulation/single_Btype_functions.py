@@ -1,5 +1,7 @@
 import numpy as np
 
+from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
+from Hyperparameter.v0_hyperparameter_selection import grid_search_hyperparameters_v0
 from Initial_value_selection import initial_value_B
 from comparison_method.no_tree_model import no_tree_model
 from data_generation import generate_simulated_data
@@ -9,7 +11,7 @@ from main_ADMM import ADMM_optimize
 from related_functions import define_tree_structure
 
 
-def single_iteration(G, p, N_train, N_test, B, lambda1, lambda2, lambda1_init, Correlation_type, rho=0.5, eta=0.1):
+def single_iteration(G, p, N_train, N_test, B, Correlation_type, rho=0.5, eta=0.1):
     results = {
         'no_tree': {'TPR': None, 'FPR': None, 'SSE': None, 'c_index': None, 'RI': None, 'G': None},
         'proposed': {'TPR': None, 'FPR': None, 'SSE': None, 'c_index': None, 'RI': None, 'G': None}
@@ -20,10 +22,16 @@ def single_iteration(G, p, N_train, N_test, B, lambda1, lambda2, lambda1_init, C
     # test data
     X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type)
 
-    tree = define_tree_structure()
+    parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 5),
+                        'lambda2': np.linspace(0.01, 0.6, 5)}
+    # 执行网格搜索
+    lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, delta, R,
+                                                                     rho=rho, eta=eta, method='proposed')
+    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta, method='no_tree')
+
 
     # NO tree method
-    B_notree = no_tree_model(X, delta, R, lambda1=lambda1_init, rho=rho, eta=eta)
+    B_notree = no_tree_model(X, delta, R, lambda1=lambda1_notree, rho=rho, eta=eta)
     # 变量选择评估
     significance_true = variable_significance(B)
     significance_pred_notree = variable_significance(B_notree)
@@ -45,8 +53,8 @@ def single_iteration(G, p, N_train, N_test, B, lambda1, lambda2, lambda1_init, C
     results['no_tree']['G'] = G_num_notree
 
     # Proposed method
-    B_init_proposed = initial_value_B(X, delta, R, lambda1=lambda1, B_init=None)
-    B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=rho,eta=eta,
+    B_init_proposed = initial_value_B(X, delta, R, lambda1=lambda1_proposed, B_init=None)
+    B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1_proposed, lambda2=lambda1_proposed, rho=rho,eta=eta,
                                                       a=3, delta_primal=5e-5, delta_dual=5e-5, B_init=B_init_proposed)
     # 变量选择评估
     significance_true = variable_significance(B)

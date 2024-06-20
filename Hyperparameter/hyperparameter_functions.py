@@ -8,7 +8,7 @@ from comparison_method.heterogeneity_model import heterogeneity_model
 from main_ADMM import ADMM_optimize
 
 
-def calculate_mbic(B, X, delta, R):
+def calculate_mbic(B, X, delta, R, scale_factor=1):
     G = B.shape[0]
     # p = B.shape[1]
     N = np.sum([X[g].shape[0] for g in range(B.shape[0])])
@@ -21,9 +21,10 @@ def calculate_mbic(B, X, delta, R):
     # 计算mBIC
     B_unique = np.unique(B, axis=0)   # 删除重复行
     params_num = parameters_num(B_unique)
-    # mbic = (- log_likelihood + len(B_unique) * np.log(params_num) * np.log(N)) / N
-    # mbic = (- log_likelihood + len(B_unique) * np.log(np.log(params_num)) * np.log(N)) / N
-    mbic = (- log_likelihood + params_num * 2) / N
+    # penalty_term = scale_factor * len(B_unique) * np.log(np.log(params_num)) * np.log(N)
+    # penalty_term = scale_factor * len(B_unique) * np.log(np.log(N + params_num)) * np.log(N)
+    penalty_term = params_num * 2
+    mbic = (- log_likelihood + penalty_term) / N
     return mbic
 
 

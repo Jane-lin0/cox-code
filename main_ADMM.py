@@ -8,7 +8,7 @@ from evaluation_indicators import SSE
 
 # max_iter_m=200, max_iter_l=50
 def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter_m=200, max_iter_l=50, tolerance_l=1e-4,
-                  delta_primal=1e-4, delta_dual=1e-4, B_init=None):
+                  delta_primal=5e-5, delta_dual=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
     tree = define_tree_structure()

@@ -37,7 +37,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     labels_true = group_labels(B, N_test)  # 样本分组标签
 
     parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 5),
-                        'lambda2': np.linspace(0.01, 0.5, 3)}
+                        'lambda2': np.linspace(0.01, 0.6, 5)}
     # 执行网格搜索
     lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, delta, R,
                                                                      rho=rho, eta=eta, method='proposed')

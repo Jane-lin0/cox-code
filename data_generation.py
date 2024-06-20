@@ -16,22 +16,22 @@ def true_B(p, B_type):
         B = np.tile(np.hstack([np.array([1 if i % 2 == 0 else -1 for i in range(10)]), np.zeros(p - 10)]),
                          (5, 1))  # 真实 G = 1
     elif B_type == 2:  # lambda1=0.2, lambda2=1   # lambda2=0.5~1.5
-        B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
+        B_G1 = np.tile(np.hstack([np.array([1 if i % 2 == 0 else -1 for i in range(10)]), np.zeros(p - 10)]),
                        (3, 1))  # 真实 G = 2
-        B_G2 = np.tile(np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)]),
+        B_G2 = np.tile(np.hstack([np.array([-1 if i % 2 == 0 else 1 for i in range(10)]), np.zeros(p - 10)]),
                        (2, 1))
         B = np.vstack([B_G1, B_G2])
     elif B_type == 3:
-        B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
+        B_G1 = np.tile(np.hstack([np.array([1 if i % 2 == 0 else -1 for i in range(10)]), np.zeros(p - 10)]),
                        (3, 1))  # 真实 G = 3
-        B_G2 = np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)])
-        B_G3 = np.hstack([np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(10)]), np.zeros(p - 10)])
+        B_G2 = np.hstack([np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(10)]), np.zeros(p - 10)])
+        B_G3 = np.hstack([np.array([-1.3 if i % 2 == 0 else 1.3 for i in range(10)]), np.zeros(p - 10)])
         B = np.vstack([B_G1, B_G2, B_G3])
     elif B_type == 4:  # 真实 G = 3
         B_G1 = np.tile(np.hstack([np.array([0.7 if i % 2 == 0 else -0.7 for i in range(10)]), np.zeros(p - 10)]),
                        (2, 1))
-        B_G2 = np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)])
-        B_G3 = np.tile(np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)]),
+        B_G2 = np.hstack([np.array([1.3 if i % 2 == 0 else -1.3 for i in range(10)]), np.zeros(p - 10)])
+        B_G3 = np.tile(np.hstack([np.array([-1 if i % 2 == 0 else 1 for i in range(10)]), np.zeros(p - 10)]),
                        (2, 1))
         B = np.vstack([B_G1, B_G2, B_G3])
     return B

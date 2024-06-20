@@ -28,15 +28,10 @@ def main():
     B_type = 1
     Correlation_type = "Band1"     # X 的协方差形式
 
-    # lambda1 = 0.29
-    # lambda2 = 0.34
-    # lambda1_init = 0.1
-
     N_train = np.array([200] * G)    # 训练样本
-    N_test = np.array([2000] * G)
+    N_test = np.array([500] * G)
     """ ===================================== """
     B = true_B(p, B_type=B_type)  # 真实系数 B
-    # G_num = group_num(B)
 
     results = {}
     key = (B_type, Correlation_type)
@@ -56,7 +51,7 @@ def main():
         labels_true = group_labels(B, N_test)        # 样本分组标签
 
         parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 2),
-                            'lambda2': np.linspace(0.01, 0.5, 2)}
+                            'lambda2': np.linspace(0.01, 0.6, 2)}
         # 执行网格搜索
         lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, delta, R,
                                                                          rho=rho, eta=eta, method='proposed')

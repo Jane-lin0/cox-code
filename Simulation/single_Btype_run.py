@@ -20,16 +20,10 @@ if __name__ == "__main__":
 
     B_type = 1
     Correlation_type = "Band1"  # X 的协方差形式
-    lambda1 = 0.26
-    lambda2 = 0.11
-    lambda1_init = 0.1
+    # lambda1 = 0.26
+    # lambda2 = 0.11
+    # lambda1_init = 0.1
 
-    # results = {}
-    # for B_type in [1, 2, 3, 4]:
-    #     for Correlation_type in ["Band1", "Band2", "AR(0.3)", "AR(0.7)", "CS(0.2)", "CS(0.4)"]:
-    #         print(f"iteration start: B_type = {B_type}, Correlation_type = {Correlation_type}  ")
-    #         lambda1, lambda2 = lambda_params(B_type, Correlation_type).values()
-    #         lambda1_init = lambda1 / 2
 
     B = true_B(p, B_type=B_type)  # 真实系数 B
 
@@ -39,10 +33,10 @@ if __name__ == "__main__":
         'proposed': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'G': []}
     }
 
-    iterations = 2
+    iterations = 10
     with ProcessPoolExecutor() as executor:
-        futures = [executor.submit(single_iteration, G, p, N_train, N_test, B, lambda1, lambda2, lambda1_init,
-                                   Correlation_type, rho, eta) for _ in range(iterations)]
+        futures = [executor.submit(single_iteration, G, p, N_train, N_test, B, Correlation_type, rho, eta)
+                   for _ in range(iterations)]
         for future in as_completed(futures):
             result = future.result()
             for method in result:
