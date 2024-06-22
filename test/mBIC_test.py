@@ -22,7 +22,8 @@ def calculate_mbic_beta(beta, X, delta, R):
         if beta[i] == 0:
             S_matrix[i] = 0
     params_num = np.sum(S_matrix)
-    mbic = - log_likelihood + np.log(np.log(params_num)) * np.log(N)    # S_hat 变为 np.log(params_num)
+    # mbic = - log_likelihood + np.log(np.log(params_num)) * np.log(N)    # S_hat 变为 np.log(params_num)
+    mbic = - log_likelihood + params_num * 2
     return mbic
 
 
@@ -82,7 +83,7 @@ y['col_time'] = Y_g
 sksurv_coxph.fit(X_g, y)
 coef_sksurv = sksurv_coxph.coef_
 
-parameter_ranges = {'lambda1': np.linspace(0.01, 0.2, 20)}
+parameter_ranges = {'lambda1': np.linspace(0.01, 0.2, 5)}
 best_params = grid_search_hyperparameters_beta(parameter_ranges, X_g, delta_g, R_g)
 lambda1 = best_params['lambda1']
 # lambda1 = 0.07
@@ -106,6 +107,10 @@ print(f"c_index_sksurv={c_index_sksurv:.4f}, c_index_pred={c_index_pred:.4f}")
 
 end_time = time.time() - start_time
 print(f"mBIC test running time {end_time/60:.1f} minutes")
+
+
+# sse_sksurv=2.5498, sse_pred=57.3394    # lambda1 = 0.06 (0.01, 0.2, 5)，params_num *2, mBIC在770~860
+# c_index_sksurv=0.9835, c_index_pred=0.9821
 
 # sse_sksurv=0.6211, sse_pred=1.0624      # lambda1 = 0.03  np.linspace(0.01, 0.2, 20)  mBIC 加 loglog, mBIC 在 780~825
 # c_index_sksurv=0.9741, c_index_pred=0.9735

@@ -3,7 +3,7 @@ import numpy as np
 from related_functions import group_soft_threshold, gradient_descent_adam_initial
 
 
-def beta_estimation(X_g, delta_g, R_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_m=1e-6):
+def beta_estimation(X_g, delta_g, R_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_m=1e-5):
     p = X_g.shape[1]
     # 初始化变量
     beta1 = np.ones(p)
@@ -54,7 +54,7 @@ def beta_estimation(X_g, delta_g, R_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50
     return beta_hat
 
 
-def no_tree_model(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5):
+def no_tree_model(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=100, L=30, tolerance_l=5e-4, delta_dual=1e-4):
     G = len(X)
     p = X[0].shape[1]
     B_hat = np.zeros((G, p))

@@ -6,8 +6,8 @@ from data_generation import generate_simulated_data
 from evaluation_indicators import SSE
 
 
-def initial_value_B(X, delta, R, lambda1=0.2, rho=1, eta=0.1, a=3, M=500, L=50, delta_l=1e-4, delta_primal=1e-4,
-                    delta_dual=1e-4, B_init=None):
+def initial_value_B(X, delta, R, lambda1=0.2, rho=1, eta=0.1, a=3, M=200, L=50, delta_l=1e-4, delta_primal=5e-5,
+                    delta_dual=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
     # 初始化变量

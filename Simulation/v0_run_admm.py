@@ -44,8 +44,8 @@ def run_admm():
     # test data
     X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=data_type, seed=1)
 
-    parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 3),
-                        'lambda2': np.linspace(0.01, 0.8, 8)}
+    parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 5),
+                        'lambda2': np.linspace(0.01, 0.5, 5)}
     # 执行网格搜索
     lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, delta, R,
                                                                      rho=rho, eta=eta, method='proposed')
@@ -55,9 +55,9 @@ def run_admm():
     labels_true = group_labels(B, N_test)  # 样本分组标签
 
     # Proposed method
-    B_init_proposed = initial_value_B(X, delta, R, lambda1=lambda1_notree, B_init=None)
+    B_init_proposed = initial_value_B(X, delta, R, lambda1=lambda1_proposed, B_init=None)
     B_proposed = ADMM_optimize(X, delta, R, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=rho, eta=eta,
-                               tolerance_l=5e-5, delta_primal=1e-5, delta_dual=1e-5, B_init=B_init_proposed)
+                               B_init=B_init_proposed)  # tolerance_l=5e-5, delta_primal=1e-5, delta_dual=1e-5,
     # 变量选择评估
     significance_pred_proposed = variable_significance(B_proposed)
     TP_proposed, FP_proposed, TN_proposed, FN_proposed = calculate_confusion_matrix(significance_true,

@@ -8,7 +8,7 @@ from comparison_method.heterogeneity_model import heterogeneity_model
 from main_ADMM import ADMM_optimize
 
 
-def calculate_mbic(B, X, delta, R, scale_factor=1):
+def calculate_mbic(B, X, delta, R, scale_factor=5, method='proposed'):
     G = B.shape[0]
     # p = B.shape[1]
     N = np.sum([X[g].shape[0] for g in range(B.shape[0])])
@@ -21,9 +21,11 @@ def calculate_mbic(B, X, delta, R, scale_factor=1):
     # 计算mBIC
     B_unique = np.unique(B, axis=0)   # 删除重复行
     params_num = parameters_num(B_unique)
-    # penalty_term = scale_factor * len(B_unique) * np.log(np.log(params_num)) * np.log(N)
-    # penalty_term = scale_factor * len(B_unique) * np.log(np.log(N + params_num)) * np.log(N)
-    penalty_term = params_num * 2
+    if method == 'proposed':
+        # penalty_term = scale_factor * len(B_unique) * np.log(np.log(params_num)) * np.log(N)
+        penalty_term = scale_factor * len(B_unique) * np.log(np.log(N + params_num)) * np.log(N)
+    else:
+        penalty_term = params_num * 2
     mbic = (- log_likelihood + penalty_term) / N
     return mbic
 
@@ -41,11 +43,11 @@ def evaluate_hyperparameters(params, X, delta, R, rho, eta, method):
     lambda1, lambda2 = params
     if method == 'proposed':
         B_proposed = ADMM_optimize(X, delta, R, lambda1, lambda2, rho=rho, eta=eta)  # 基于 ADMM 更新
-        mbic = calculate_mbic(B_proposed, X, delta, R)
+        mbic = calculate_mbic(B_proposed, X, delta, R, method=method)
         # print(f"proposed method: lambda1={lambda1:.2f}, lambda2={lambda2:.2f}, mBIC={mbic:.2f}")
     elif method == 'heter':
         B_heter = heterogeneity_model(X, delta, R, lambda1, lambda2, rho=rho, eta=eta)
-        mbic = calculate_mbic(B_heter, X, delta, R)
+        mbic = calculate_mbic(B_heter, X, delta, R, method=method)
         # print(f"heter method: lambda1={lambda1:.2f}, lambda2={lambda2:.2f}, mBIC={mbic:.2f}")
 
     return (lambda1, lambda2), mbic

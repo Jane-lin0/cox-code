@@ -1,9 +1,8 @@
 import numpy as np
-from related_functions import define_tree_structure, Delta_J, compute_Delta, internal_nodes, all_descendants, \
-    children, group_soft_threshold, gradient_descent_adam, check_nan_inf, get_coef_estimation, clip_matrix
-from Initial_value_selection import initial_value_B
-from data_generation import generate_simulated_data
-from evaluation_indicators import SSE
+from related_functions import define_tree_structure, compute_Delta, internal_nodes, all_descendants, group_soft_threshold, gradient_descent_adam, get_coef_estimation
+# from Initial_value_selection import initial_value_B
+# from data_generation import generate_simulated_data
+# from evaluation_indicators import SSE
 
 
 # max_iter_m=200, max_iter_l=50
