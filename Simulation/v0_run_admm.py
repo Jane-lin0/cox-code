@@ -25,7 +25,7 @@ def run_admm():
     rho = 0.5
     eta = 0.1
 
-    B_type = 2
+    B_type = 1
     data_type = "Band1"      # X 的协方差形式
 
     N_train = np.array([200]*G)

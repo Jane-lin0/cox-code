@@ -8,7 +8,7 @@ from comparison_method.heterogeneity_model import heterogeneity_model
 from main_ADMM import ADMM_optimize
 
 
-def calculate_mbic(B, X, delta, R, scale_factor=5, method='proposed'):
+def calculate_mbic(B, X, delta, R, scale_factor=10, method='proposed'):
     G = B.shape[0]
     # p = B.shape[1]
     N = np.sum([X[g].shape[0] for g in range(B.shape[0])])
