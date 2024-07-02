@@ -10,15 +10,15 @@ from comparison_method.no_tree_model import no_tree_model
 from data_generation import generate_simulated_data, true_B
 
 
-def grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=0.5, eta=0.1, method='no_tree'):
+def grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=0.5, eta=0.1, method='no_tree'):
     best_mbic = float('inf')
     best_params = {}
     mbic_records = {}
 
     if method == 'no_tree':
         for lambda1 in parameter_ranges['lambda1']:
-            B_hat = no_tree_model(X, delta, R, lambda1=lambda1, rho=rho, eta=eta)
-            mbic = calculate_mbic(B_hat, X, delta, R, method=method)
+            B_hat = no_tree_model(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta)
+            mbic = calculate_mbic(B_hat, X, Y, delta, method=method)
             # 记录每个 lambda1, lambda2 对应的 mbic
             mbic_records[lambda1] = mbic
             # print(f"notree method: lambda1={lambda1:.2f}, mBIC={mbic:.2f}")
@@ -30,8 +30,8 @@ def grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=0.5, eta=0
 
     elif method == 'homo':
         for lambda1 in parameter_ranges['lambda1']:
-            B_hat = homogeneity_model(X, delta, R, lambda1=lambda1, rho=rho, eta=eta)
-            mbic = calculate_mbic(B_hat, X, delta, R, method=method)
+            B_hat = homogeneity_model(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta)
+            mbic = calculate_mbic(B_hat, X, Y, delta, method=method)
             # 记录每个 lambda1, lambda2 对应的 mbic
             mbic_records[lambda1] = mbic
             # print(f"homo method: lambda1={lambda1:.2f}, mBIC={mbic:.2f}")
@@ -104,8 +104,8 @@ if __name__ == "__main__":
     X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method="Band1")  # 生成模拟数据
 
     # 执行网格搜索
-    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, R, rho=rho, eta=eta, method='no_tree')
-    lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, R, rho=rho, eta=eta, method='homo')
+    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, Y, R, eta=eta, method='no_tree')
+    lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, Y, R, eta=eta, method='homo')
     print(f"lambda1_homo={lambda1_homo:.2f} \n "
           f"lambda1_notree={lambda1_notree:.2f}")
     # 计算运行时间

@@ -2,7 +2,7 @@ import numpy as np
 from scipy.spatial.distance import pdist, squareform
 from sklearn.metrics import adjusted_rand_score
 
-from related_functions import internal_nodes, all_descendants, leaf_nodes, children, leaf_parents
+# from related_functions import internal_nodes, all_descendants, leaf_nodes, children, leaf_parents
 
 """ variable selection evaluation """
 
@@ -12,8 +12,8 @@ def variable_significance(B_mat, threshold=0.05):
     p = B_mat.shape[1]
     significance = np.ones(p)
     for j in range(p):
-        # if np.linalg.norm(B_mat[:, j]) != 0:
-        if np.linalg.norm(B_mat[:, j]) < np.sqrt(G) * threshold:
+        # if np.linalg.norm(B_mat[:, j]) < np.sqrt(G) * threshold:
+        if np.linalg.norm(B_mat[:, j]) == 0:
             significance[j] = 0
     return significance
 
@@ -89,7 +89,7 @@ def calculate_ari(labels_true, labels_pred):
     return ari
 
 
-def group_num(B, tol=1e-5):      # 类似 unique，但是是合并相似而不是完全相同的行向量
+def group_num(B, tol=1e-2):      # 类似 unique，但是是合并相似而不是完全相同的行向量
     # 计算所有行向量之间的欧氏距离
     dists = pdist(B, metric='euclidean')
     # dist_matrix[i,j] = 第 i 行 和 第 j 行 的距离
@@ -111,7 +111,7 @@ def group_num(B, tol=1e-5):      # 类似 unique，但是是合并相似而不�
     return num_groups
 
 
-def group_labels(B, N_list, tol=1e-2):
+def grouping_labels(B, tol=1e-2):
     G = B.shape[0]
     dists = pdist(B, metric='euclidean')
     dist_matrix = squareform(dists)
@@ -126,11 +126,16 @@ def group_labels(B, N_list, tol=1e-2):
             group_labels[similar] = group_id
             grouped[similar] = True
             group_id += 1
+    return group_labels
+
+
+def sample_labels(B, N_list, tol=1e-2):
+    group_label = grouping_labels(B, tol=tol)
 
     sample_labels = []
     for g in range(len(N_list)):
         # 获取每个group 的标签
-        label = group_labels[g]
+        label = group_label[g]
         sample_labels.append(np.repeat(label, N_list[g]))
 
     return np.concatenate(sample_labels)

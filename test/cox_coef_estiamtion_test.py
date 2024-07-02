@@ -4,7 +4,6 @@ from sksurv.linear_model import CoxPHSurvivalAnalysis
 # from lifelines import CoxPHFitter
 from sksurv.metrics import concordance_index_censored
 
-from related_functions import compute_Delta
 from evaluation_indicators import C_index
 
 

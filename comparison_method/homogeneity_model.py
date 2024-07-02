@@ -4,7 +4,7 @@ from data_generation import get_R_matrix
 from related_functions import group_soft_threshold, gradient_descent_adam_homo
 
 
-def homogeneity_beta(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5):
+def homogeneity_beta(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5):
     p = X[0].shape[1]
     # X = np.vstack(X)        # 所有数据属于同一个 group
     # delta = np.concatenate(delta)
@@ -24,7 +24,7 @@ def homogeneity_beta(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tol
         # 更新beta1
         for l in range(L):
             beta1_l_old = beta1.copy()     # 初始化迭代
-            beta1 = gradient_descent_adam_homo(beta1, X, delta, R, beta3, u, rho, eta=eta, max_iter=1)
+            beta1 = gradient_descent_adam_homo(beta1, X, Y, delta, beta3, u, rho, eta=eta, max_iter=1)
             if np.linalg.norm(beta1 - beta1_l_old)**2 < tolerance_l:
                 # print(f"Iteration {l}:  beta1 update")
                 break
@@ -60,9 +60,9 @@ def homogeneity_beta(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tol
     return beta_hat
 
 
-def homogeneity_model(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5):
+def homogeneity_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5):
     G = len(X)
-    beta = homogeneity_beta(X, delta, R, lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L, tolerance_l=tolerance_l,
+    beta = homogeneity_beta(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L, tolerance_l=tolerance_l,
                             delta_dual=delta_dual)
     # B_hat = np.array([beta for _ in range(G)])
     B_homo = np.tile(beta, (G, 1))
@@ -90,10 +90,10 @@ if __name__ == "__main__":
 
     # lambda1 = 0.01
     parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 10)}
-    lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta, method='homo')
+    lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='homo')
     print(f"lambda1_homo={lambda1_homo}")
 
-    B_homo = homogeneity_model(X, delta, R, lambda1=lambda1_homo, rho=rho, eta=eta)
+    B_homo = homogeneity_model(X, Y, delta, lambda1=lambda1_homo, rho=rho, eta=eta)
 
     sse_homo = SSE(B_homo, B)
     print(f" sse_homo={sse_homo} ")

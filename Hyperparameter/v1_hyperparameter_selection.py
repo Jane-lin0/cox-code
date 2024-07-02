@@ -23,8 +23,8 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, rho=0.5, eta=0
     if method == 'proposed':
         for lambda1 in parameter_ranges['lambda1']:
             for lambda2 in parameter_ranges['lambda2']:
-                B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta)
-                mbic = calculate_mbic(B_hat, X, delta, R)
+                B_hat = ADMM_optimize(X, Y, delta, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta)
+                mbic = calculate_mbic(B_hat, X, Y, delta)
                 # 记录每个 lambda1, lambda2 对应的 mbic
                 mbic_records[(lambda1, lambda2)] = mbic
                 # 检查是否找到了更好的参数
@@ -35,8 +35,8 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, rho=0.5, eta=0
     elif method == 'heter':
         for lambda1 in parameter_ranges['lambda1']:
             for lambda2 in parameter_ranges['lambda2']:
-                B_hat = heterogeneity_model(X, delta, R, lambda1, lambda2, rho=rho, eta=eta)
-                mbic = calculate_mbic(B_hat, X, delta, R)
+                B_hat = heterogeneity_model(X, R, delta, lambda1, lambda2, rho=rho, eta=eta)
+                mbic = calculate_mbic(B_hat, X, Y, delta)
                 mbic_records[(lambda1, lambda2)] = mbic
                 # 检查是否找到了更好的参数
                 if mbic < best_mbic:

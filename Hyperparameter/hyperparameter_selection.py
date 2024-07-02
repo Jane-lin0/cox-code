@@ -10,7 +10,7 @@ from Hyperparameter.hyperparameter_functions import evaluate_hyperparameters_sha
 同时，使用进程池来管理内存和资源，以避免 BufferError '''
 
 
-def grid_search_hyperparameters(parameter_ranges, X, delta, R, rho=0.5, eta=0.1, method='proposed'):
+def grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=0.5, eta=0.1, method='proposed'):
     best_mbic = float('inf')
     # best_params = {}
     best_params = {'lambda1': None, 'lambda2': None, 'mbic': None}
@@ -21,8 +21,8 @@ def grid_search_hyperparameters(parameter_ranges, X, delta, R, rho=0.5, eta=0.1,
     # 将X, delta, R, rho, eta, method放入一个共享的字典中
     shared_data = {
         'X': X,
+        'Y': Y,
         'delta': delta,
-        'R': R,
         'rho': rho,
         'eta': eta,
         'method': method
@@ -49,25 +49,6 @@ def grid_search_hyperparameters(parameter_ranges, X, delta, R, rho=0.5, eta=0.1,
     print(f"method={method}, best params = {best_params}")
     return best_params['lambda1'], best_params['lambda2']
 
-    # with ProcessPoolExecutor() as executor:
-    #     futures = {executor.submit(evaluate_hyperparameters, params, X, delta, R, rho, eta, method): params for params in
-    #                params_list}
-    #
-    #     for future in as_completed(futures):
-    #         params = futures[future]
-    #         try:
-    #             (lambda1, lambda2), mbic = future.result()
-    #             mbic_records[(lambda1, lambda2)] = mbic
-    #             if mbic < best_mbic:
-    #                 best_mbic = mbic
-    #                 best_params = {'lambda1': lambda1, 'lambda2': lambda2, 'mbic': best_mbic}
-    #         except Exception as exc:
-    #             print(f"Generated an exception: {exc}")
-    #
-    # hyperparameter_figure(parameter_ranges, mbic_records, best_params)
-    #
-    # return best_params['lambda1'], best_params['lambda2']
-
 
 if __name__ == "__main__":
     start_time = time.time()
@@ -92,8 +73,8 @@ if __name__ == "__main__":
             # 执行网格搜索
             # lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, delta, R,
             #                                                                  rho=rho, eta=eta, method='proposed')
-            lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, delta, R,
-                                                                             rho=rho, eta=eta, method='heter')
+            lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
+                                                                       method='heter')
             print(f"B type={B_type}, Correlation_type={Correlation_type} \n "
                   f"lambda1_heter={lambda1_heter:.2f}, lambda2_heter={lambda2_heter:.2f} ")
                   # f"lambda1_proposed={lambda1_proposed:.2f}, lambda2_proposed={lambda2_proposed:.2f} \n"

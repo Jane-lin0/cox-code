@@ -2,6 +2,51 @@ import sys
 import warnings
 import numpy as np
 import networkx as nx
+from sksurv.linear_model import CoxPHSurvivalAnalysis
+
+from data_generation import get_R_matrix
+from evaluation_indicators import variable_significance, grouping_labels
+
+
+def truncate_sample(X, significance_pred):
+    X_trancated = []
+    for g in range(len(X)):
+        X_g = X[g][:, significance_pred == 1]
+        X_trancated.append(X_g)
+    return X_trancated
+
+
+def refit(X_high, Y, delta, B_hat):
+    G = len(X_high)
+    p = X_high[0].shape[1]
+    significance_pred = variable_significance(B_hat)
+    significance_col = np.where(significance_pred == 1)[0]
+    X = [X_high[g][:, significance_col] for g in range(len(X_high))]   # truncate sample，提取显著变量
+
+    # 合并同质组，并拟合
+    group_labels = grouping_labels(B_hat)
+    B_refit = np.zeros(shape=(G, p))
+    for label in np.unique(group_labels):
+        similar_indices = np.where(group_labels == label)[0]
+        # 合并同质group
+        X_homo = np.vstack([X[i] for i in similar_indices])
+        Y_homo = np.vstack([Y[i].reshape(-1, 1) for i in similar_indices]).flatten()
+        delta_homo = np.vstack([delta[i].reshape(-1, 1) for i in similar_indices]).flatten()
+        # 拟合cox
+        Y_g_sksurv = transform_y(Y_homo, delta_homo)
+        sksurv_coxph = CoxPHSurvivalAnalysis()
+        sksurv_coxph.fit(X_homo, Y_g_sksurv)
+        # 输出估计值
+        for i in similar_indices:
+            B_refit[i, significance_col] = sksurv_coxph.coef_
+    return B_refit
+
+
+def transform_y(Y_g, delta_g):
+    y = np.empty(dtype=[('col_event', bool), ('col_time', np.float64)], shape=len(Y_g))
+    y['col_event'] = delta_g
+    y['col_time'] = Y_g
+    return y
 
 
 def check_nan_inf(data, name, clip_value=1):
@@ -170,8 +215,9 @@ def gradient_descent_adam(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho,
     return beta
 
 
-def gradient_descent_adam_homo(beta, X, delta, R, beta3, u2, rho,
-                          eta=0.1, max_iter=1, tol=1e-3, a1=0.9, a2=0.999, epsilon=1e-4):
+def gradient_descent_adam_homo(beta, X, Y, delta, beta3, u2, rho, eta=0.1, max_iter=1, tol=1e-3, a1=0.9, a2=0.999,
+                               epsilon=1e-4):
+    R = [get_R_matrix(Y[g]) for g in range(len(X))]
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
     for i in range(max_iter):
@@ -200,9 +246,10 @@ def gradient_descent_adam_homo(beta, X, delta, R, beta3, u2, rho,
     return beta
 
 
-def gradient_descent_adam_initial(beta, X_g, delta_g, R_g, beta3, u2, rho,
-                          eta=0.1, max_iter=1, tol=1e-3, a1=0.9, a2=0.999, epsilon=1e-4):
+def gradient_descent_adam_initial(beta, X_g, Y_g, delta_g, beta3, u2, rho, eta=0.1, max_iter=1, tol=1e-3, a1=0.9,
+                                  a2=0.999, epsilon=1e-4):
     n = X_g.shape[0]
+    R_g = get_R_matrix(Y_g)
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
     for i in range(max_iter):

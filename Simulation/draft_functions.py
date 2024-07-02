@@ -7,7 +7,7 @@ from comparison_method.homogeneity_model import homogeneity_model
 from comparison_method.no_tree_model import no_tree_model
 from data_generation import generate_simulated_data, true_B
 from evaluation_indicators import SSE, C_index, variable_significance, calculate_confusion_matrix, calculate_tpr, \
-    calculate_fpr, calculate_ri, group_num, calculate_ari, group_labels
+    calculate_fpr, calculate_ri, group_num, calculate_ari, sample_labels
 from main_ADMM import ADMM_optimize
 
 
@@ -35,22 +35,22 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type,
                                                                  seed=repeat_id + 1)
     significance_true = variable_significance(B)  # 变量显著性
-    labels_true = group_labels(B, N_test)  # 样本分组标签
+    labels_true = sample_labels(B, N_test)  # 样本分组标签
 
     parameter_ranges = {'lambda1': np.linspace(0.01, 1, 5),
                         'lambda2': np.linspace(0.01, 1, 5)}
     # 执行网格搜索
-    lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, delta, R,
-                                                                     rho=rho, eta=eta, method='proposed')
-    lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, delta, R,
-                                                               rho=rho, eta=eta, method='heter')
-    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta, method='no_tree')
-    lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta, method='homo')
+    lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
+                                                                     method='proposed')
+    lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
+                                                               method='heter')
+    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='no_tree')
+    lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='homo')
 
     # Proposed method
-    B_init_proposed = initial_value_B(X, delta, R, lambda1=lambda1_proposed, B_init=None)
-    B_proposed = ADMM_optimize(X, delta, R, lambda1=lambda1_proposed, lambda2=lambda2_proposed,
-                               rho=rho, eta=eta, B_init=B_init_proposed)
+    B_init_proposed = initial_value_B(X, Y, delta, lambda1=lambda1_proposed, B_init=None)
+    B_proposed = ADMM_optimize(X, Y, delta, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=rho, eta=eta,
+                               B_init=B_init_proposed)
     # 变量选择评估
     significance_pred_proposed = variable_significance(B_proposed)
     TP_proposed, FP_proposed, TN_proposed, FN_proposed = calculate_confusion_matrix(significance_true,
@@ -63,7 +63,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     c_index_proposed = [C_index(B_proposed[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
     # 分组指标
     RI_proposed = calculate_ri(TP_proposed, FP_proposed, TN_proposed, FN_proposed)
-    labels_pred_proposed = group_labels(B_proposed, N_test)
+    labels_pred_proposed = sample_labels(B_proposed, N_test)
     ARI_proposed = calculate_ari(labels_true, labels_pred_proposed)
     G_num_proposed = group_num(B_proposed)
 
@@ -76,9 +76,9 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     results['proposed']['G'].append(G_num_proposed)
 
     # heter method
-    B_init_heter = initial_value_B(X, delta, R, lambda1_heter, rho, eta)
-    B_heter = heterogeneity_model(X, delta, R, lambda1=lambda1_heter, lambda2=lambda2_heter,
-                                  rho=rho, eta=eta, B_init=B_init_heter)
+    B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, rho, eta)
+    B_heter = heterogeneity_model(X, R, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=rho, eta=eta,
+                                  B_init=B_init_heter)
     # 变量选择评估
     significance_pred_heter = variable_significance(B_heter)
     TP_heter, FP_heter, TN_heter, FN_heter = calculate_confusion_matrix(significance_true, significance_pred_heter)
@@ -86,7 +86,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     FPR_heter = calculate_fpr(FP_heter, TN_heter)
 
     RI_heter = calculate_ri(TP_heter, FP_heter, TN_heter, FN_heter)
-    labels_pred_heter = group_labels(B_heter, N_test)
+    labels_pred_heter = sample_labels(B_heter, N_test)
     ARI_heter = calculate_ari(labels_true, labels_pred_heter)
     G_num_heter = group_num(B_heter)
 
@@ -102,7 +102,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     results['heter']['G'].append(G_num_heter)
 
     # homo method
-    B_homo = homogeneity_model(X, delta, R, lambda1=lambda1_homo, rho=rho, eta=eta)
+    B_homo = homogeneity_model(X, Y, delta, lambda1=lambda1_homo, rho=rho, eta=eta)
     # 变量选择评估
     significance_pred_homo = variable_significance(B_homo)
     TP_homo, FP_homo, TN_homo, FN_homo = calculate_confusion_matrix(significance_true, significance_pred_homo)
@@ -110,7 +110,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     FPR_homo = calculate_fpr(FP_homo, TN_homo)
 
     RI_homo = calculate_ri(TP_homo, FP_homo, TN_homo, FN_homo)
-    labels_pred_homo = group_labels(B_homo, N_test)
+    labels_pred_homo = sample_labels(B_homo, N_test)
     ARI_homo = calculate_ari(labels_true, labels_pred_homo)
     G_num_homo = group_num(B_homo)
 
@@ -126,7 +126,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     results['homo']['G'].append(G_num_homo)
 
     # NO tree method
-    B_notree = no_tree_model(X, delta, R, lambda1=lambda1_notree, rho=rho, eta=eta)
+    B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
     # 变量选择评估
     significance_pred_notree = variable_significance(B_notree)
     TP_notree, FP_notree, TN_notree, FN_notree = calculate_confusion_matrix(significance_true, significance_pred_notree)
@@ -134,7 +134,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     FPR_notree = calculate_fpr(FP_notree, TN_notree)
 
     RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
-    labels_pred_notree = group_labels(B_notree, N_test)
+    labels_pred_notree = sample_labels(B_notree, N_test)
     ARI_notree = calculate_ari(labels_true, labels_pred_notree)
     G_num_notree = group_num(B_notree)
 

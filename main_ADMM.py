@@ -1,18 +1,22 @@
 import numpy as np
-from related_functions import define_tree_structure, compute_Delta, internal_nodes, all_descendants, group_soft_threshold, gradient_descent_adam, get_coef_estimation
+
+from data_generation import get_R_matrix, generate_simulated_data, true_B
+from related_functions import define_tree_structure, compute_Delta, internal_nodes, all_descendants, \
+    group_soft_threshold, gradient_descent_adam, get_coef_estimation, refit
 # from Initial_value_selection import initial_value_B
 # from data_generation import generate_simulated_data
 # from evaluation_indicators import SSE
 
 
 # max_iter_m=200, max_iter_l=50
-def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter_m=200, max_iter_l=50, tolerance_l=1e-4,
+def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter_m=200, max_iter_l=50, tolerance_l=1e-4,
                   delta_primal=5e-5, delta_dual=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
     tree = define_tree_structure()
     K = G + len(internal_nodes(tree))
     N = np.sum([len(X[g]) for g in range(G)])
+    R = [get_R_matrix(Y[g]) for g in range(G)]
 
     if B_init is None:
         B1 = np.random.uniform(low=-0.1, high=0.1, size=(G, p))  # initial_value_B(X, delta, R, lambda1=0.2)
@@ -50,7 +54,6 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter
             if compute_Delta(B1, B1_l_old, is_relative=False) < tolerance_l:
                 # print(f"Iteration {l}:  B1 update")
                 break
-        # B1 = check_nan_inf(B1, 'B1', clip_value)
 
         # 更新Gamma1
         Gamma1_old = Gamma1.copy()
@@ -91,11 +94,9 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter
         B2_old = B2.copy()
         M_tilde = np.vstack([B1 - U1, Gamma1 - W1])
         Gamma2 = D_c @ M_tilde
-        # Gamma2 = check_nan_inf(Gamma2, 'Gamma2', clip_value)
 
         # 更新 B2
         B2 = D @ Gamma2
-        # B2 = check_nan_inf(B2, 'B2', clip_value)
         # print(f"SSE(Gamma1, Gamma2) = {SSE(Gamma1, Gamma2)}")
 
         # 更新B3
@@ -107,16 +108,15 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter
             else:
                 lambda1_j = lambda1 - B1_minus_U2_norm / a
             B3[:, j] = group_soft_threshold(B1[:, j] - U2[:, j], lambda1_j / rho)
-        # B3 = check_nan_inf(B3, 'B3', clip_value)
 
         # 更新U1, U2和W1
         U1 = U1 + (B2 - B1)
         U2 = U2 + (B3 - B1)
         W1 = W1 + (Gamma2 - Gamma1)
 
-        e1 = compute_Delta(U1, 0, is_relative=False)
-        e2 = compute_Delta(U2, 0, is_relative=False)
-        e3 = compute_Delta(W1, 0, is_relative=False)
+        # e1 = compute_Delta(U1, 0, is_relative=False)
+        # e2 = compute_Delta(U2, 0, is_relative=False)
+        # e3 = compute_Delta(W1, 0, is_relative=False)
 
         epsilon_dual1 = compute_Delta(B1, B1_old, is_relative=False)
         epsilon_dual2 = compute_Delta(B2, B2_old, is_relative=False)
@@ -138,18 +138,21 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter
     B_hat = get_coef_estimation(B3, Gamma1, D)
     # B_hat = get_coef_estimation(D, B3, Gamma1, tree)
 
+    B_refit = refit(X, Y, delta, B_hat)
+
     # 返回结果
-    return B_hat
+    # return B_hat
+    return B_refit
 
 
 # # 生成模拟数据
 # G = 5  # 类别数
 # p = 50  # 变量维度
-# N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
-# B = np.tile(np.array([0.5 if i % 2 == 0 else -0.5 for i in range(p)]), (G, 1))
-# X, delta, R = generate_simulated_data(G, N_class, p, B, method="AR(0.3)")
+# N_class = np.array([200]*G)
+# B = true_B(p, B_type=1)
+# X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method="Band1", seed=12)
 #
-# B1, B2, B3, Gamma1, Gamma2 = ADMM_optimize(X, delta, R, lambda1=0.01, lambda2=0.01, rho=1, eta=0.01, a=3)
+# B_hat = ADMM_optimize(X, Y, delta, lambda1=0.5, lambda2=0.1, rho=1, eta=0.1, a=3)
 
 
 

@@ -6,7 +6,7 @@ from data_generation import generate_simulated_data
 from evaluation_indicators import SSE
 
 
-def initial_value_B(X, delta, R, lambda1=0.2, rho=1, eta=0.1, a=3, M=200, L=50, delta_l=1e-4, delta_primal=5e-5,
+def initial_value_B(X, Y, delta, lambda1=0.2, rho=1, eta=0.1, a=3, M=200, L=50, delta_l=1e-4, delta_primal=5e-5,
                     delta_dual=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
@@ -28,7 +28,8 @@ def initial_value_B(X, delta, R, lambda1=0.2, rho=1, eta=0.1, a=3, M=200, L=50, 
         for l in range(L):
             B1_l_old = B1.copy()     # 初始化迭代
             for g in range(G):
-                B1[g] = gradient_descent_adam_initial(B1[g], X[g], delta[g], R[g], B3[g], U2[g], rho, eta=eta*(0.95)**1, max_iter=1)
+                B1[g] = gradient_descent_adam_initial(B1[g], X[g], Y[g], delta[g], B3[g], U2[g], rho,
+                                                      eta=eta * (0.95) ** 1, max_iter=1)
             if compute_Delta(B1, B1_l_old, is_relative=False) < delta_l:
                 # print(f"Iteration {l}:  B1 update")
                 break
@@ -86,7 +87,7 @@ if __name__ == "__main__":
     B = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]), (G, 1))   # lambda1=0.1
     X, Y, delta, R = generate_simulated_data(G, N_class, p, B, )
 
-    B_initial = initial_value_B(X, delta, R, lambda1=0.1)
+    B_initial = initial_value_B(X, Y, delta, lambda1=0.1)
     SSE = SSE(B_initial, B)
 
     # records = {}

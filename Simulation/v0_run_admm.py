@@ -1,6 +1,5 @@
 import time
 import numpy as np
-import pandas as pd
 
 from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
 from Hyperparameter.v0_hyperparameter_selection import grid_search_hyperparameters_v0
@@ -9,7 +8,7 @@ from related_functions import define_tree_structure
 from Initial_value_selection import initial_value_B
 from data_generation import generate_simulated_data, true_B
 from evaluation_indicators import SSE, C_index, variable_significance, \
-    calculate_confusion_matrix, calculate_tpr, calculate_fpr, calculate_ri, group_num, group_labels, calculate_ari
+    calculate_confusion_matrix, calculate_tpr, calculate_fpr, calculate_ri, group_num, sample_labels, calculate_ari
 from main_ADMM import ADMM_optimize
 
 '''
@@ -40,24 +39,27 @@ def run_admm():
     }
 
     # train data
-    X, Y, delta, R = generate_simulated_data(G, N_train, p, B, method=data_type, seed=0)
+    X, Y, delta = generate_simulated_data(G, N_train, p, B, method=data_type, seed=0)
     # test data
-    X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=data_type, seed=1)
+    X_test, Y_test, delta_test = generate_simulated_data(G, N_test, p, B, method=data_type, seed=1)
 
-    parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 5),
-                        'lambda2': np.linspace(0.01, 0.5, 5)}
+    parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 3),
+                        'lambda2': np.linspace(0.01, 0.5, 3)}
     # 执行网格搜索
-    lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, delta, R,
-                                                                     rho=rho, eta=eta, method='proposed')
-    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta, method='no_tree')
+    # lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
+    #                                                                  method='proposed')
+    # lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='no_tree')
+    lambda1_proposed, lambda2_proposed = 0.255, 0.5
+    lambda1_notree = 0.255
 
     significance_true = variable_significance(B)  # 变量显著性
-    labels_true = group_labels(B, N_test)  # 样本分组标签
+    labels_true = sample_labels(B, N_test)  # 样本分组标签
 
     # Proposed method
-    B_init_proposed = initial_value_B(X, delta, R, lambda1=lambda1_proposed, B_init=None)
-    B_proposed = ADMM_optimize(X, delta, R, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=rho, eta=eta,
-                               B_init=B_init_proposed)  # tolerance_l=5e-5, delta_primal=1e-5, delta_dual=1e-5,
+    B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
+    # B_init_proposed = initial_value_B(X, Y, delta, lambda1=lambda1_proposed, B_init=None)
+    B_proposed = ADMM_optimize(X, Y, delta, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=rho, eta=eta,
+                               B_init=B_notree)  # tolerance_l=5e-5, delta_primal=1e-5, delta_dual=1e-5,
     # 变量选择评估
     significance_pred_proposed = variable_significance(B_proposed)
     TP_proposed, FP_proposed, TN_proposed, FN_proposed = calculate_confusion_matrix(significance_true,
@@ -70,7 +72,7 @@ def run_admm():
     c_index_proposed = [C_index(B_proposed[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
     # 分组指标
     RI_proposed = calculate_ri(TP_proposed, FP_proposed, TN_proposed, FN_proposed)
-    labels_pred_proposed = group_labels(B_proposed, N_test)
+    labels_pred_proposed = sample_labels(B_proposed, N_test)
     ARI_proposed = calculate_ari(labels_true, labels_pred_proposed)
     G_num_proposed = group_num(B_proposed)
 
@@ -83,7 +85,6 @@ def run_admm():
     results['proposed']['G'].append(G_num_proposed)
 
     # NO tree method
-    B_notree = no_tree_model(X, delta, R, lambda1=lambda1_notree, rho=rho, eta=eta)
     # 变量选择评估
     significance_pred_notree = variable_significance(B_notree)
     TP_notree, FP_notree, TN_notree, FN_notree = calculate_confusion_matrix(significance_true, significance_pred_notree)
@@ -91,7 +92,7 @@ def run_admm():
     FPR_notree = calculate_fpr(FP_notree, TN_notree)
 
     RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
-    labels_pred_notree = group_labels(B_notree, N_test)
+    labels_pred_notree = sample_labels(B_notree, N_test)
     ARI_notree = calculate_ari(labels_true, labels_pred_notree)
     G_num_notree = group_num(B_notree)
 

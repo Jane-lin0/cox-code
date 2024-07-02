@@ -33,7 +33,7 @@ def grid_search_hyperparameters_beta(parameter_ranges, X, delta, R):
     mbic_records = {}
 
     for lambda1 in parameter_ranges['lambda1']:
-        beta_hat = beta_estimation(X_g, delta_g, R_g, lambda1=lambda1)
+        beta_hat = beta_estimation(X_g, Y_g, delta_g, lambda1=lambda1)
         mbic = calculate_mbic_beta(beta_hat, X, delta, R)
         # 记录每个 lambda1, lambda2 对应的 mbic
         mbic_records[lambda1] = mbic
@@ -87,7 +87,7 @@ parameter_ranges = {'lambda1': np.linspace(0.01, 0.2, 5)}
 best_params = grid_search_hyperparameters_beta(parameter_ranges, X_g, delta_g, R_g)
 lambda1 = best_params['lambda1']
 # lambda1 = 0.07
-coef_pred = beta_estimation(X_g, delta_g, R_g, lambda1=lambda1)
+coef_pred = beta_estimation(X_g, Y_g, delta_g, lambda1=lambda1)
 
 # 输出系数估计值
 res = pd.DataFrame({
