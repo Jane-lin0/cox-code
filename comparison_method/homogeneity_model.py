@@ -1,7 +1,7 @@
 import numpy as np
 
 from data_generation import get_R_matrix
-from related_functions import group_soft_threshold, gradient_descent_adam_homo
+from related_functions import group_soft_threshold, gradient_descent_adam_homo, refit
 
 
 def homogeneity_beta(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5):
@@ -66,6 +66,8 @@ def homogeneity_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, to
                             delta_dual=delta_dual)
     # B_hat = np.array([beta for _ in range(G)])
     B_homo = np.tile(beta, (G, 1))
+
+    # B_refit = refit(X, Y, delta, B_homo)
     return B_homo
 
 

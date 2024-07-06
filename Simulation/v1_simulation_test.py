@@ -44,27 +44,56 @@ def main():
 
     for i in range(1):
         # train data
-        X, Y, delta, R = generate_simulated_data(G, N_train, p, B, method=Correlation_type, seed=i)
+        X, Y, delta = generate_simulated_data(G, N_train, p, B, method=Correlation_type, seed=i)
         # test data
-        X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type, seed=i+1)
+        X_test, Y_test, delta_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type, seed=i+1)
         significance_true = variable_significance(B)   # 变量显著性
         labels_true = sample_labels(B, N_test)  # 样本分组标签
 
-        parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 5),
-                            'lambda2': np.linspace(0.01, 0.5, 5)}
-        # 执行网格搜索
-        lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho,
-                                                                         eta=eta, method='proposed')
-        lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
-                                                                   method='heter')
-        lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
-                                                        method='no_tree')
-        lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='homo')
+        # parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 5),
+        #                     'lambda2': np.linspace(0.01, 0.5, 5)}
+        # # 执行网格搜索
+        # lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta,
+        #                                                                  method='proposed', rho=rho, eta=eta)
+        # lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='heter',
+        #                                                            rho=rho, eta=eta)
+        # lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
+        #                                                 method='no_tree')
+        # lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='homo')
+
+        lambda1_proposed, lambda2_proposed = 0.255, 0.5
+        lambda1_heter, lambda2_heter = 0.5, 0.3775
+        lambda1_notree = 0.255
+        lambda1_homo = 0.01
+
+        # NO tree method
+        B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
+        # 变量选择评估
+        significance_pred_notree = variable_significance(B_notree)
+        TP_notree, FP_notree, TN_notree, FN_notree = calculate_confusion_matrix(significance_true, significance_pred_notree)
+        TPR_notree = calculate_tpr(TP_notree, FN_notree)
+        FPR_notree = calculate_fpr(FP_notree, TN_notree)
+
+        RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
+        labels_pred_notree = sample_labels(B_notree, N_test)
+        ARI_notree = calculate_ari(labels_true, labels_pred_notree)
+        G_num_notree = group_num(B_notree)
+
+        sse_notree = SSE(B_notree, B)
+        c_index_notree = [C_index(B_notree[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
+
+        results[key]['no_tree']['TPR'].append(TPR_notree)
+        results[key]['no_tree']['FPR'].append(FPR_notree)
+        results[key]['no_tree']['SSE'].append(sse_notree)
+        results[key]['no_tree']['c_index'].append(np.mean(c_index_notree))
+        results[key]['no_tree']['RI'].append(RI_notree)
+        results[key]['no_tree']['ARI'].append(ARI_notree)
+        results[key]['no_tree']['G'].append(G_num_notree)
 
         # Proposed method
-        B_init_proposed = initial_value_B(X, Y, delta, lambda1=lambda1_proposed, B_init=None)
+        # B_init_proposed = initial_value_B(X, Y, delta, lambda1=lambda1_proposed, B_init=None)
         B_proposed = ADMM_optimize(X, Y, delta, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=rho, eta=eta,
-                                   B_init=B_init_proposed)
+                                   B_init=B_notree)
         # 变量选择评估
         significance_pred_proposed = variable_significance(B_proposed)
         TP_proposed, FP_proposed, TN_proposed, FN_proposed = calculate_confusion_matrix(significance_true, significance_pred_proposed)
@@ -90,7 +119,7 @@ def main():
 
         # heter method
         B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, rho, eta)
-        B_heter = heterogeneity_model(X, R, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=rho, eta=eta,
+        B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=rho, eta=eta,
                                       B_init=B_init_heter)
         # 变量选择评估
         significance_pred_heter = variable_significance(B_heter)
@@ -137,31 +166,6 @@ def main():
         results[key]['homo']['RI'].append(RI_homo)
         results[key]['homo']['ARI'].append(ARI_homo)
         results[key]['homo']['G'].append(G_num_homo)
-
-        # NO tree method
-        B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
-        # 变量选择评估
-        significance_pred_notree = variable_significance(B_notree)
-        TP_notree, FP_notree, TN_notree, FN_notree = calculate_confusion_matrix(significance_true, significance_pred_notree)
-        TPR_notree = calculate_tpr(TP_notree, FN_notree)
-        FPR_notree = calculate_fpr(FP_notree, TN_notree)
-
-        RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
-        labels_pred_notree = sample_labels(B_notree, N_test)
-        ARI_notree = calculate_ari(labels_true, labels_pred_notree)
-        G_num_notree = group_num(B_notree)
-
-        sse_notree = SSE(B_notree, B)
-        c_index_notree = [C_index(B_notree[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
-
-        results[key]['no_tree']['TPR'].append(TPR_notree)
-        results[key]['no_tree']['FPR'].append(FPR_notree)
-        results[key]['no_tree']['SSE'].append(sse_notree)
-        results[key]['no_tree']['c_index'].append(np.mean(c_index_notree))
-        results[key]['no_tree']['RI'].append(RI_notree)
-        results[key]['no_tree']['ARI'].append(ARI_notree)
-        results[key]['no_tree']['G'].append(G_num_notree)
-
 
     # 计算平均值和标准差
     for key, methods in results.items():

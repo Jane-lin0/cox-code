@@ -1,6 +1,6 @@
 import numpy as np
 
-from related_functions import group_soft_threshold, gradient_descent_adam_initial
+from related_functions import group_soft_threshold, gradient_descent_adam_initial, refit
 
 
 def beta_estimation(X_g, Y_g, delta_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_m=1e-5):
@@ -61,7 +61,9 @@ def no_tree_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=100, L=30, tolera
     for g in range(G):
         B_hat[g] = beta_estimation(X[g], Y[g], delta[g], lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L,
                                    tolerance_l=tolerance_l, delta_m=delta_dual)
-    return B_hat
+
+    # B_refit = refit(X, Y, delta, B_hat)
+    return B_hat  # B_refit
 
 
 if __name__ == "__main__":

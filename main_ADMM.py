@@ -136,13 +136,10 @@ def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter
             break
 
     B_hat = get_coef_estimation(B3, Gamma1, D)
-    # B_hat = get_coef_estimation(D, B3, Gamma1, tree)
+    # B_refit = refit(X, Y, delta, B_hat)
 
-    B_refit = refit(X, Y, delta, B_hat)
-
-    # 返回结果
-    # return B_hat
-    return B_refit
+    return B_hat
+    # return B_refit
 
 
 # # 生成模拟数据

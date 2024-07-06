@@ -18,7 +18,7 @@ def grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=0.5, eta=0
     if method == 'no_tree':
         for lambda1 in parameter_ranges['lambda1']:
             B_hat = no_tree_model(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta)
-            mbic = calculate_mbic(B_hat, X, Y, delta, method=method)
+            mbic = calculate_mbic(B_hat, X, Y, delta)
             # 记录每个 lambda1, lambda2 对应的 mbic
             mbic_records[lambda1] = mbic
             # print(f"notree method: lambda1={lambda1:.2f}, mBIC={mbic:.2f}")
@@ -31,7 +31,7 @@ def grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=0.5, eta=0
     elif method == 'homo':
         for lambda1 in parameter_ranges['lambda1']:
             B_hat = homogeneity_model(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta)
-            mbic = calculate_mbic(B_hat, X, Y, delta, method=method)
+            mbic = calculate_mbic(B_hat, X, Y, delta)
             # 记录每个 lambda1, lambda2 对应的 mbic
             mbic_records[lambda1] = mbic
             # print(f"homo method: lambda1={lambda1:.2f}, mBIC={mbic:.2f}")

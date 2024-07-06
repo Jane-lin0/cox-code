@@ -25,8 +25,8 @@ def single_iteration(G, p, N_train, N_test, B, Correlation_type, rho=0.5, eta=0.
     parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 5),
                         'lambda2': np.linspace(0.01, 0.6, 5)}
     # 执行网格搜索
-    lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
-                                                                     method='proposed')
+    lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='proposed',
+                                                                     rho=rho, eta=eta)
     lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='no_tree')
 
 

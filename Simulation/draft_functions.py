@@ -40,10 +40,10 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     parameter_ranges = {'lambda1': np.linspace(0.01, 1, 5),
                         'lambda2': np.linspace(0.01, 1, 5)}
     # 执行网格搜索
-    lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
-                                                                     method='proposed')
-    lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
-                                                               method='heter')
+    lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='proposed',
+                                                                     rho=rho, eta=eta)
+    lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='heter', rho=rho,
+                                                               eta=eta)
     lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='no_tree')
     lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='homo')
 
@@ -77,7 +77,7 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
 
     # heter method
     B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, rho, eta)
-    B_heter = heterogeneity_model(X, R, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=rho, eta=eta,
+    B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=rho, eta=eta,
                                   B_init=B_init_heter)
     # 变量选择评估
     significance_pred_heter = variable_significance(B_heter)

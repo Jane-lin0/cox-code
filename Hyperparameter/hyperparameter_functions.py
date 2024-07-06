@@ -9,7 +9,7 @@ from data_generation import get_R_matrix
 from main_ADMM import ADMM_optimize
 
 
-def calculate_mbic(B, X, Y, delta, scale_factor=10, method='proposed'):
+def calculate_mbic(B, X, Y, delta, scale_factor=10):
     G = B.shape[0]
     # p = B.shape[1]
     N = np.sum([X[g].shape[0] for g in range(B.shape[0])])
@@ -47,11 +47,11 @@ def evaluate_hyperparameters(params, X, Y, delta, rho, eta, method):
     lambda1, lambda2 = params
     if method == 'proposed':
         B_proposed = ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=rho, eta=eta)  # 基于 ADMM 更新
-        mbic = calculate_mbic(B_proposed, X, Y, delta, method=method)
+        mbic = calculate_mbic(B_proposed, X, Y, delta)
         # print(f"proposed method: lambda1={lambda1:.2f}, lambda2={lambda2:.2f}, mBIC={mbic:.2f}")
     elif method == 'heter':
         B_heter = heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=rho, eta=eta)
-        mbic = calculate_mbic(B_heter, X, Y, delta, method=method)
+        mbic = calculate_mbic(B_heter, X, Y, delta)
         # print(f"heter method: lambda1={lambda1:.2f}, lambda2={lambda2:.2f}, mBIC={mbic:.2f}")
 
     return (lambda1, lambda2), mbic

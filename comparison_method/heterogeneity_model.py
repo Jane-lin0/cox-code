@@ -3,6 +3,7 @@ import numpy as np
 from Initial_value_selection import initial_value_B
 from comparison_method.no_tree_model import no_tree_model
 from related_functions import compute_Delta, group_soft_threshold
+from data_generation import get_R_matrix
 
 
 def get_matrix_index(i, j, G):
@@ -79,7 +80,7 @@ def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
             B1_l_old = B1.copy()      # 初始化迭代
             for g in range(G):
                 B1[g] = gradient_descent_adam_hetero(B1[g], X[g], Y[g], delta[g], B3[g], U[g], g, G, B1, A, W, rho,
-                                                     eta=eta * (0.95), max_iter=1)
+                                                     eta=eta*(0.95), max_iter=1)
                 # B1[g] = B1[g] - eta * Delta_J(B1[g], B2[g], B3[g], U1[g], U2[g], X[g], delta[g], R[g], N, rho)
             if compute_Delta(B1, B1_l_old, is_relative=False) < tolerance_l:
                 # print(f"Iteration {l}:  B1 update")
@@ -139,13 +140,14 @@ def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
             if B3[i, j] == 0:
                 B_hat[i, j] = 0
 
+    # B_refit = refit(X, Y, delta, B_hat)
     return B_hat
     # return B1, B3, B_hat
 
 
 if __name__ == "__main__":
     import time
-    from data_generation import generate_simulated_data, true_B, get_R_matrix
+    from data_generation import generate_simulated_data, true_B
     from evaluation_indicators import SSE, C_index, variable_significance, calculate_confusion_matrix, calculate_tpr, \
     calculate_fpr, calculate_ri, sample_labels, calculate_ari, group_num
     from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
@@ -183,12 +185,12 @@ if __name__ == "__main__":
     X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method=Correlation_type)
     X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type)
     # 执行网格搜索
-    lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
-                                                               method='heter')
+    lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='heter', rho=rho,
+                                                               eta=eta)
     lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='no_tree')
 
     B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, rho, eta)
-    B_heter = heterogeneity_model(X, R, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=rho, eta=eta,
+    B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=rho, eta=eta,
                                   B_init=B_init_heter)
     # 变量选择评估
     significance_true = variable_significance(B)
