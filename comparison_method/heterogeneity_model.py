@@ -11,9 +11,9 @@ def get_matrix_index(i, j, G):
     return int(l)
 
 
-def gradient_descent_adam_hetero(beta, X_g, Y_g, delta_g, beta3, u, g, G, B1, A, W, rho, eta=0.1, max_iter=1, tol=1e-6,
+def gradient_descent_adam_hetero(beta, X_g, delta_g, R_g, beta3, u, g, G, B1, A, W, rho, eta=0.1, max_iter=1, tol=1e-6,
                                  a1=0.9, a2=0.999, epsilon=1e-8):
-    R_g = get_R_matrix(Y_g)
+    # R_g = get_R_matrix(Y_g)
     n_g = len(X_g)
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
@@ -47,10 +47,11 @@ def gradient_descent_adam_hetero(beta, X_g, Y_g, delta_g, beta3, u, g, G, B1, A,
     return beta
 
 
-def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_iter_m=200, max_iter_l=50,
+def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=0.4, eta=0.1, a=3, max_iter_m=200, max_iter_l=50,
                         tolerance_l=1e-4, delta_dual=5e-5, delta_prime=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
+    R = [get_R_matrix(Y[g]) for g in range(G)]
     # N = np.sum([len(X[g]) for g in range(G)])
     # B1 = initial_value_B(X, delta, R)
     if B_init is None:
@@ -79,13 +80,12 @@ def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
         for l in range(max_iter_l):
             B1_l_old = B1.copy()      # 初始化迭代
             for g in range(G):
-                B1[g] = gradient_descent_adam_hetero(B1[g], X[g], Y[g], delta[g], B3[g], U[g], g, G, B1, A, W, rho,
-                                                     eta=eta*(0.95), max_iter=1)
+                B1[g] = gradient_descent_adam_hetero(B1[g], X[g], delta[g], R[g], B3[g], U[g], g, G, B1, A, W, rho,
+                                                     eta=eta*(0.95**l), max_iter=1)
                 # B1[g] = B1[g] - eta * Delta_J(B1[g], B2[g], B3[g], U1[g], U2[g], X[g], delta[g], R[g], N, rho)
-            if compute_Delta(B1, B1_l_old, is_relative=False) < tolerance_l:
-                # print(f"Iteration {l}:  B1 update")
+            diff = compute_Delta(B1, B1_l_old, is_relative=False)
+            if diff < tolerance_l:
                 break
-        # check_nan_inf(B1, 'B1')
 
         # 更新 B3
         B3_old = B3.copy()
@@ -99,7 +99,6 @@ def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
                 else:
                     lambda1_j = lambda1 - B1_minus_U_norm / a
                 B3[:, j] = group_soft_threshold(B1[:, j] - U[:, j], lambda1_j / rho)
-        # check_nan_inf(B3, 'B3')
 
         # 更新 A
         A_old = A.copy()
@@ -107,15 +106,14 @@ def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
         for i in range(G-1):
             for j in range(i+1, G):
                 if False:
-                    A[l] = group_soft_threshold(B1[i] - B1[j] + W[l], lambda2 / rho)
+                    A[l] = group_soft_threshold(B1[i] - B1[j] + W[l], lambda2 / rho)   # lasso
                 else:
-                    theta = np.linalg.norm(B1[i] - B1[j] + W[l])
+                    theta = np.linalg.norm(B1[i] - B1[j] + W[l])   # MCP
                     if theta > a * lambda2:
                         lambda2_l = 0
                     else:
                         lambda2_l = lambda2 - theta / a
                     A[l] = group_soft_threshold(B1[i] - B1[j] + W[l], lambda2_l / rho)
-        # check_nan_inf(A, 'A')
 
         # 更新 U 和 W
         U = U + B3 - B1
@@ -142,7 +140,6 @@ def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_
 
     # B_refit = refit(X, Y, delta, B_hat)
     return B_hat
-    # return B1, B3, B_hat
 
 
 if __name__ == "__main__":
@@ -158,8 +155,8 @@ if __name__ == "__main__":
     # 生成模拟数据
     G = 5  # 类别数
     p = 100  # 变量维度
-    rho = 0.5
-    eta = 0.1
+    rho = 0.4
+    eta = 0.2
     N_class = np.array([200]*G)   # 每个类别的样本数量
     N_test = np.array([500] * G)
 
@@ -167,54 +164,32 @@ if __name__ == "__main__":
     B_type = 1
 
     parameter_ranges = {
-        'lambda1': np.linspace(0.01, 0.5, 5),
-        'lambda2': np.linspace(0.01, 0.5, 3)
+        'lambda1': np.linspace(0.05, 0.4, 4),
+        'lambda2': np.linspace(0.05, 0.4, 4)
     }
 
     results = {}
     key = (B_type, Correlation_type)
     results[key] = {
-        'proposed': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
         'heter': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
-        'homo': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
         'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []}
     }
 
     B = true_B(p, B_type=B_type)
 
-    X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method=Correlation_type)
-    X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type)
+    X, Y, delta = generate_simulated_data(G, N_class, p, B, method=Correlation_type, seed=0)
+    X_test, Y_test, delta_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type, seed=1)
+
     # 执行网格搜索
-    lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='heter', rho=rho,
-                                                               eta=eta)
-    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='no_tree')
+    # lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='heter', rho=rho,
+    #                                                            eta=eta)
+    # lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='no_tree')
 
-    B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, rho, eta)
-    B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=rho, eta=eta,
-                                  B_init=B_init_heter)
-    # 变量选择评估
-    significance_true = variable_significance(B)
-    significance_pred_heter = variable_significance(B_heter)
-    TP_heter, FP_heter, TN_heter, FN_heter = calculate_confusion_matrix(significance_true, significance_pred_heter)
-    TPR_heter = calculate_tpr(TP_heter, FN_heter)
-    FPR_heter = calculate_fpr(FP_heter, TN_heter)
+    lambda1_heter, lambda2_heter = 0.4, 0.05
+    lambda1_notree = 0.17
 
-    RI_heter = calculate_ri(TP_heter, FP_heter, TN_heter, FN_heter)
     labels_true = sample_labels(B, N_test)
-    labels_pred_heter = sample_labels(B_heter, N_test)
-    ARI_heter = calculate_ari(labels_true, labels_pred_heter)
-    G_num_heter = group_num(B_heter)
-
-    sse_heter = SSE(B_heter, B)
-    c_index_heter = [C_index(B_heter[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
-
-    results[key]['heter']['TPR'].append(TPR_heter)
-    results[key]['heter']['FPR'].append(FPR_heter)
-    results[key]['heter']['SSE'].append(sse_heter)
-    results[key]['heter']['c_index'].append(np.mean(c_index_heter))
-    results[key]['heter']['RI'].append(RI_heter)
-    results[key]['heter']['ARI'].append(ARI_heter)
-    results[key]['heter']['G'].append(G_num_heter)
+    significance_true = variable_significance(B)
 
     B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
     # 变量选择评估
@@ -238,6 +213,31 @@ if __name__ == "__main__":
     results[key]['no_tree']['RI'].append(RI_notree)
     results[key]['no_tree']['ARI'].append(ARI_notree)
     results[key]['no_tree']['G'].append(G_num_notree)
+
+    B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, rho, eta)
+    B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=rho, eta=eta,
+                                  B_init=B_init_heter)       # B_notree
+    # 变量选择评估
+    significance_pred_heter = variable_significance(B_heter)
+    TP_heter, FP_heter, TN_heter, FN_heter = calculate_confusion_matrix(significance_true, significance_pred_heter)
+    TPR_heter = calculate_tpr(TP_heter, FN_heter)
+    FPR_heter = calculate_fpr(FP_heter, TN_heter)
+
+    RI_heter = calculate_ri(TP_heter, FP_heter, TN_heter, FN_heter)
+    labels_pred_heter = sample_labels(B_heter, N_test)
+    ARI_heter = calculate_ari(labels_true, labels_pred_heter)
+    G_num_heter = group_num(B_heter)
+
+    sse_heter = SSE(B_heter, B)
+    c_index_heter = [C_index(B_heter[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
+
+    results[key]['heter']['TPR'].append(TPR_heter)
+    results[key]['heter']['FPR'].append(FPR_heter)
+    results[key]['heter']['SSE'].append(sse_heter)
+    results[key]['heter']['c_index'].append(np.mean(c_index_heter))
+    results[key]['heter']['RI'].append(RI_heter)
+    results[key]['heter']['ARI'].append(ARI_heter)
+    results[key]['heter']['G'].append(G_num_heter)
 
     print(f"heter method running time:{(time.time() - start_time)/60} minutes")
 

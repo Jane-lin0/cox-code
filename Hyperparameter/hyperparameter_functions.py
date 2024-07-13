@@ -9,7 +9,7 @@ from data_generation import get_R_matrix
 from main_ADMM import ADMM_optimize
 
 
-def calculate_mbic(B, X, Y, delta, scale_factor=10):
+def calculate_mbic(B, X, Y, delta):
     G = B.shape[0]
     # p = B.shape[1]
     N = np.sum([X[g].shape[0] for g in range(B.shape[0])])
@@ -18,8 +18,6 @@ def calculate_mbic(B, X, Y, delta, scale_factor=10):
     for g in range(G):
         X_beta = np.dot(X[g], B[g])
         log_likelihood += delta[g].T @ (X_beta - np.log(R[g] @ np.exp(X_beta)))
-    # 计算非零元素的总数，非零叶节点
-    # S_hat = np.sum([int(np.linalg.norm(B[:, j]) != 0) for j in range(B.shape[1])])  # p = B.shape[1]
     # 计算mBIC
     B_unique = np.unique(B, axis=0)   # 删除重复行
     params_num = parameters_num(B_unique)
@@ -27,10 +25,8 @@ def calculate_mbic(B, X, Y, delta, scale_factor=10):
     mbic = (- log_likelihood + penalty_term) / N
     return mbic
 
-    # if method == 'proposed' or 'heter':
-    #     # penalty_term = scale_factor * len(B_unique) * np.log(np.log(params_num)) * np.log(N)
+    #     penalty_term = scale_factor * len(B_unique) * np.log(np.log(params_num)) * np.log(N)
     #     penalty_term = scale_factor * len(B_unique) * np.log(np.log(N + params_num)) * np.log(N)
-    # else:
     #     penalty_term = params_num * 2
 
 
@@ -43,23 +39,24 @@ def parameters_num(B_unique):
     return np.sum(S_matrix)
 
 
-def evaluate_hyperparameters(params, X, Y, delta, rho, eta, method):
+def evaluate_hyperparameters(params, X, Y, delta, eta, method):
     lambda1, lambda2 = params
+    mbic = 0
+    # B_hat = None
     if method == 'proposed':
-        B_proposed = ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=rho, eta=eta)  # 基于 ADMM 更新
-        mbic = calculate_mbic(B_proposed, X, Y, delta)
+        B_hat = ADMM_optimize(X, Y, delta, lambda1, lambda2, eta=eta)  # 基于 ADMM 更新
+        mbic = calculate_mbic(B_hat, X, Y, delta)
         # print(f"proposed method: lambda1={lambda1:.2f}, lambda2={lambda2:.2f}, mBIC={mbic:.2f}")
     elif method == 'heter':
-        B_heter = heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=rho, eta=eta)
-        mbic = calculate_mbic(B_heter, X, Y, delta)
+        B_hat = heterogeneity_model(X, Y, delta, lambda1, lambda2, eta=eta)
+        mbic = calculate_mbic(B_hat, X, Y, delta)
         # print(f"heter method: lambda1={lambda1:.2f}, lambda2={lambda2:.2f}, mBIC={mbic:.2f}")
-
     return (lambda1, lambda2), mbic
 
 
 # 定义辅助函数，传入共享数据字典和参数
 def evaluate_hyperparameters_shared(params, shared_data):
-    return evaluate_hyperparameters(params, shared_data['X'], shared_data['Y'], shared_data['delta'], shared_data['rho'],
+    return evaluate_hyperparameters(params, shared_data['X'], shared_data['Y'], shared_data['delta'],
                                     shared_data['eta'], shared_data['method'])
 
 

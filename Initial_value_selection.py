@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from related_functions import compute_Delta, group_soft_threshold, gradient_descent_adam_initial, group_mcp_threshold_matrix
-from data_generation import generate_simulated_data
+from data_generation import generate_simulated_data, get_R_matrix
 from evaluation_indicators import SSE
 
 
@@ -18,6 +18,7 @@ def initial_value_B(X, Y, delta, lambda1=0.2, rho=1, eta=0.1, a=3, M=200, L=50, 
         B1 = B_init
     B3 = B1.copy()
     U2 = np.zeros((G, p))
+    R = [get_R_matrix(Y[g]) for g in range(G)]
 
     # ADMM算法主循环
     for m in range(M):
@@ -28,7 +29,7 @@ def initial_value_B(X, Y, delta, lambda1=0.2, rho=1, eta=0.1, a=3, M=200, L=50, 
         for l in range(L):
             B1_l_old = B1.copy()     # 初始化迭代
             for g in range(G):
-                B1[g] = gradient_descent_adam_initial(B1[g], X[g], Y[g], delta[g], B3[g], U2[g], rho,
+                B1[g] = gradient_descent_adam_initial(B1[g], X[g], delta[g], R[g], B3[g], U2[g], rho,
                                                       eta=eta * (0.95) ** 1, max_iter=1)
             if compute_Delta(B1, B1_l_old, is_relative=False) < delta_l:
                 # print(f"Iteration {l}:  B1 update")

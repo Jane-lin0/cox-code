@@ -3,13 +3,9 @@ import numpy as np
 from data_generation import get_R_matrix, generate_simulated_data, true_B
 from related_functions import define_tree_structure, compute_Delta, internal_nodes, all_descendants, \
     group_soft_threshold, gradient_descent_adam, get_coef_estimation, refit
-# from Initial_value_selection import initial_value_B
-# from data_generation import generate_simulated_data
-# from evaluation_indicators import SSE
 
 
-# max_iter_m=200, max_iter_l=50
-def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter_m=200, max_iter_l=50, tolerance_l=1e-4,
+def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_iter_m=200, max_iter_l=50, tolerance_l=1e-4,
                   delta_primal=5e-5, delta_dual=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
@@ -49,9 +45,10 @@ def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter
             B1_l_old = B1.copy()      # 初始化迭代
             for g in range(G):
                 B1[g] = gradient_descent_adam(B1[g], X[g], delta[g], R[g], B2[g], B3[g], U1[g], U2[g], N, rho,
-                                              eta=eta*(0.95)**1, max_iter=1)
+                                              eta=eta*(0.95**l), max_iter=1)
                 # B1[g] = B1[g] - eta * Delta_J(B1[g], B2[g], B3[g], U1[g], U2[g], X[g], delta[g], R[g], N, rho)
-            if compute_Delta(B1, B1_l_old, is_relative=False) < tolerance_l:
+            diff = compute_Delta(B1, B1_l_old, is_relative=False)
+            if diff < tolerance_l:
                 # print(f"Iteration {l}:  B1 update")
                 break
 
@@ -142,14 +139,16 @@ def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=0.5, eta=0.1, a=3, max_iter
     # return B_refit
 
 
-# # 生成模拟数据
-# G = 5  # 类别数
-# p = 50  # 变量维度
-# N_class = np.array([200]*G)
-# B = true_B(p, B_type=1)
-# X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method="Band1", seed=12)
-#
-# B_hat = ADMM_optimize(X, Y, delta, lambda1=0.5, lambda2=0.1, rho=1, eta=0.1, a=3)
+if __name__ == "__main__":
+    # 生成模拟数据
+    G = 5  # 类别数
+    p = 50  # 变量维度
+    N_class = np.array([200]*G)
+    B = true_B(p, B_type=1)
+    X, Y, delta = generate_simulated_data(G, N_class, p, B, method="Band1", seed=12)
+
+    B_hat = ADMM_optimize(X, Y, delta, lambda1=0.3, lambda2=0.05, rho=1, eta=0.2, a=3,
+                          delta_primal=5e-5, delta_dual=5e-5)
 
 
 

@@ -1,14 +1,20 @@
 import numpy as np
 
 from related_functions import group_soft_threshold, gradient_descent_adam_initial, refit
+from data_generation import get_R_matrix
 
 
-def beta_estimation(X_g, Y_g, delta_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_m=1e-5):
+def beta_estimation(X_g, Y_g, delta_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_m=1e-5,
+                    beta_init=None):
     p = X_g.shape[1]
     # 初始化变量
-    beta1 = np.ones(p)
-    beta3 = beta1
+    if beta_init is None:
+        beta1 = np.random.uniform(low=-0.1, high=0.1, size=p)  # np.ones(p)
+    else:
+        beta1 = beta_init.copy()
+    beta3 = beta1.copy()
     u = np.zeros(p)
+    R_g = get_R_matrix(Y_g)  # R_g 的计算一定要从 gradient 的计算函数里移出来，避免重复计算
 
     # ADMM算法主循环
     for m in range(M):
@@ -18,7 +24,9 @@ def beta_estimation(X_g, Y_g, delta_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50
         # 更新beta1
         for l in range(L):
             beta1_l_old = beta1.copy()     # 初始化迭代
-            beta1 = gradient_descent_adam_initial(beta1, X_g, Y_g, delta_g, beta3, u, rho, eta=eta, max_iter=1)
+            beta1 = gradient_descent_adam_initial(beta1, X_g, delta_g, R_g, beta3, u, rho, eta=eta*(0.95**l),
+                                                  max_iter=1)
+            # beta1 = gradient_descent_adam_initial(beta1, X_g, Y_g, delta_g, beta3, u, rho, eta=eta, max_iter=1)
             if np.linalg.norm(beta1 - beta1_l_old)**2 < tolerance_l:
                 # print(f"Iteration {l}:  beta1 update")
                 break
@@ -26,7 +34,7 @@ def beta_estimation(X_g, Y_g, delta_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50
         # 更新beta3
         beta3_old = beta3.copy()
         for j in range(p):
-            if True:
+            if False:
                 beta3[j] = group_soft_threshold(beta1[j] - u[j], lambda1 / rho)  # lasso
             else:
                 beta1_minus_u_abs = np.abs(beta1[j] - u[j])       # MCP
@@ -54,14 +62,19 @@ def beta_estimation(X_g, Y_g, delta_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50
     return beta_hat
 
 
-def no_tree_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=100, L=30, tolerance_l=5e-4, delta_dual=1e-4):
+def no_tree_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=100, L=30, tolerance_l=5e-4, delta_dual=1e-4,
+                  B_init=None):
     G = len(X)
     p = X[0].shape[1]
     B_hat = np.zeros((G, p))
     for g in range(G):
-        B_hat[g] = beta_estimation(X[g], Y[g], delta[g], lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L,
-                                   tolerance_l=tolerance_l, delta_m=delta_dual)
+        if B_init is None:
+            beta_init = None
+        else:
+            beta_init = B_init[g]
 
+        B_hat[g] = beta_estimation(X[g], Y[g], delta[g], lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L,
+                                   tolerance_l=tolerance_l, delta_m=delta_dual, beta_init=beta_init)
     # B_refit = refit(X, Y, delta, B_hat)
     return B_hat  # B_refit
 
@@ -74,8 +87,8 @@ if __name__ == "__main__":
     # 生成模拟数据
     G = 5  # 类别数
     p = 50  # 变量维度
-    rho = 0.5
-    eta = 0.1
+    rho = 1
+    eta = 0.2
     # a = 3
     # M = 200
     # L = 50
@@ -87,18 +100,15 @@ if __name__ == "__main__":
     B_type = 1
 
     B = true_B(p, B_type=B_type)
-    X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method=data_type, seed=True)
-    X_test, Y_test, delta_test, R_test = generate_simulated_data(G, N_test, p, B, method=data_type)
+    X, Y, delta = generate_simulated_data(G, N_class, p, B, method=data_type, seed=True)
+    X_test, Y_test, delta_test = generate_simulated_data(G, N_test, p, B, method=data_type)
 
     # lambda1 = 0.1
-    parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 10)}
-    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, Y, R, eta=eta, method='no_tree')
+    parameter_ranges = {'lambda1': np.linspace(0.05, 0.2, 4)}
+    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, eta=eta, method='no_tree')
+    print(f"Best tunings: {lambda1_notree}")
 
     B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
-    # B_hat = np.zeros_like(B)
-    # for g in range(G):
-    #     beta_g = beta_estimation(X[g], delta[g], R[g], lambda1=0.1)
-    #     B_hat[g] = beta_g
 
     sse_notree = SSE(B_notree, B)
     print(f" sse_notree={sse_notree} ")

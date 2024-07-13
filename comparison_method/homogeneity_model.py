@@ -4,17 +4,18 @@ from data_generation import get_R_matrix
 from related_functions import group_soft_threshold, gradient_descent_adam_homo, refit
 
 
-def homogeneity_beta(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5):
+def homogeneity_beta(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5,
+                     beta_init=None):
     p = X[0].shape[1]
-    # X = np.vstack(X)        # 所有数据属于同一个 group
-    # delta = np.concatenate(delta)
-    # Y = np.concatenate(Y)     # 需要 Y 得到 R
-    # R = get_R_matrix(Y)
 
     # 初始化变量
-    beta1 = np.ones(p)
-    beta3 = beta1
+    if beta_init is None:
+        beta1 = np.random.uniform(low=-0.1, high=0.1, size=p)  # np.ones(p)
+    else:
+        beta1 = beta_init.copy()
+    beta3 = beta1.copy()
     u = np.zeros(p)
+    R = [get_R_matrix(Y[g]) for g in range(len(X))]
 
     # ADMM算法主循环
     for m in range(M):
@@ -24,7 +25,7 @@ def homogeneity_beta(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tol
         # 更新beta1
         for l in range(L):
             beta1_l_old = beta1.copy()     # 初始化迭代
-            beta1 = gradient_descent_adam_homo(beta1, X, Y, delta, beta3, u, rho, eta=eta, max_iter=1)
+            beta1 = gradient_descent_adam_homo(beta1, X, delta, R, beta3, u, rho, eta=eta * (0.95 ** l), max_iter=1)
             if np.linalg.norm(beta1 - beta1_l_old)**2 < tolerance_l:
                 # print(f"Iteration {l}:  beta1 update")
                 break
@@ -60,11 +61,15 @@ def homogeneity_beta(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tol
     return beta_hat
 
 
-def homogeneity_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5):
+def homogeneity_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5,
+                      B_init=None):
     G = len(X)
+    if B_init is None:
+        beta_init = None
+    else:
+        beta_init = B_init[0].copy()  # B_init 每行一样
     beta = homogeneity_beta(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L, tolerance_l=tolerance_l,
-                            delta_dual=delta_dual)
-    # B_hat = np.array([beta for _ in range(G)])
+                            delta_dual=delta_dual, beta_init=beta_init)
     B_homo = np.tile(beta, (G, 1))
 
     # B_refit = refit(X, Y, delta, B_homo)

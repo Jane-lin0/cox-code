@@ -215,9 +215,8 @@ def gradient_descent_adam(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho,
     return beta
 
 
-def gradient_descent_adam_homo(beta, X, Y, delta, beta3, u2, rho, eta=0.1, max_iter=1, tol=1e-3, a1=0.9, a2=0.999,
+def gradient_descent_adam_homo(beta, X, delta, R, beta3, u2, rho, eta=0.1, max_iter=1, tol=1e-3, a1=0.9, a2=0.999,
                                epsilon=1e-4):
-    R = [get_R_matrix(Y[g]) for g in range(len(X))]
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
     for i in range(max_iter):
@@ -246,10 +245,10 @@ def gradient_descent_adam_homo(beta, X, Y, delta, beta3, u2, rho, eta=0.1, max_i
     return beta
 
 
-def gradient_descent_adam_initial(beta, X_g, Y_g, delta_g, beta3, u2, rho, eta=0.1, max_iter=1, tol=1e-3, a1=0.9,
+def gradient_descent_adam_initial(beta, X_g, delta_g, R_g, beta3, u2, rho, eta=0.1, max_iter=1, tol=1e-3, a1=0.9,
                                   a2=0.999, epsilon=1e-4):
     n = X_g.shape[0]
-    R_g = get_R_matrix(Y_g)
+    # R_g = get_R_matrix(Y_g)
     m = np.zeros_like(beta)
     v = np.zeros_like(beta)
     for i in range(max_iter):
@@ -385,7 +384,7 @@ def generate_latex_table(results):
     table_header = r"""
     \begin{table}[htbp]
     \centering
-    \caption{模拟结果（每个单元格是30次重复的平均值（标准差）}
+    \caption{模拟结果（每个单元格是10次重复的平均值（标准差）}
     \label{table:simulation_result}
     \scalebox{0.75}{
     \begin{tabular}{c c c   c c   c c   c c c}

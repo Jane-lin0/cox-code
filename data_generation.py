@@ -72,7 +72,6 @@ def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25, seed=
     Y = []
     delta = []
     # R = []
-    # labels = []  # 新增的用于保存标签的数据
     for g in range(G):
         N_g = N_class[g]
 

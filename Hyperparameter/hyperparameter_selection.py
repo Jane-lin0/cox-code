@@ -10,11 +10,12 @@ from Hyperparameter.hyperparameter_functions import evaluate_hyperparameters_sha
 同时，使用进程池来管理内存和资源，以避免 BufferError '''
 
 
-def grid_search_hyperparameters(parameter_ranges, X, Y, delta, method, rho=0.5, eta=0.1):
+def grid_search_hyperparameters(parameter_ranges, X, Y, delta, method, eta):
     best_mbic = float('inf')
     # best_params = {}
     best_params = {'lambda1': None, 'lambda2': None, 'mbic': None}
     mbic_records = {}
+    # B_best = None    # B init 无法传入
 
     params_list = [(lambda1, lambda2) for lambda1 in parameter_ranges['lambda1'] for lambda2 in
                    parameter_ranges['lambda2']]
@@ -23,7 +24,6 @@ def grid_search_hyperparameters(parameter_ranges, X, Y, delta, method, rho=0.5, 
         'X': X,
         'Y': Y,
         'delta': delta,
-        'rho': rho,
         'eta': eta,
         'method': method
     }
@@ -39,6 +39,7 @@ def grid_search_hyperparameters(parameter_ranges, X, Y, delta, method, rho=0.5, 
                 if mbic < best_mbic:
                     best_mbic = mbic
                     best_params = {'lambda1': lambda1, 'lambda2': lambda2, 'mbic': best_mbic}
+                    # B_best = B_hat.copy()
             except Exception as exc:
                 print(f"Generated an exception: {exc}")
 
@@ -71,9 +72,9 @@ if __name__ == "__main__":
             }
 
             # 执行网格搜索
-            # lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, delta, R,
+            # lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters(parameter_ranges, X, delta, R,
             #                                                                  rho=rho, eta=eta, method='proposed')
-            lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='heter',
+            lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='heter',
                                                                        rho=rho, eta=eta)
             print(f"B type={B_type}, Correlation_type={Correlation_type} \n "
                   f"lambda1_heter={lambda1_heter:.2f}, lambda2_heter={lambda2_heter:.2f} ")

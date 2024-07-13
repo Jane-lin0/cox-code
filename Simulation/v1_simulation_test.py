@@ -22,8 +22,8 @@ def main():
     """ ===================================== """
     G = 5  # 类别数
     p = 100  # 变量维度
-    rho = 0.5
-    eta = 0.1
+    rho = 1
+    eta = 0.2
 
     B_type = 1
     Correlation_type = "Band1"     # X 的协方差形式
@@ -50,21 +50,21 @@ def main():
         significance_true = variable_significance(B)   # 变量显著性
         labels_true = sample_labels(B, N_test)  # 样本分组标签
 
-        # parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 5),
-        #                     'lambda2': np.linspace(0.01, 0.5, 5)}
-        # # 执行网格搜索
+        parameter_ranges = {'lambda1': np.linspace(0.05, 0.4, 4),
+                            'lambda2': np.linspace(0.05, 0.4, 4)}
+        # 执行网格搜索
         # lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta,
         #                                                                  method='proposed', rho=rho, eta=eta)
-        # lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='heter',
-        #                                                            rho=rho, eta=eta)
-        # lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
-        #                                                 method='no_tree')
+        # lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta,
+        #                                                            method='heter', eta=eta)
+        # lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta,
+        #                                                 rho=rho, eta=eta, method='no_tree')
         # lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='homo')
 
-        lambda1_proposed, lambda2_proposed = 0.255, 0.5
-        lambda1_heter, lambda2_heter = 0.5, 0.3775
-        lambda1_notree = 0.255
-        lambda1_homo = 0.01
+        lambda1_proposed, lambda2_proposed = 0.28, 0.05
+        lambda1_heter, lambda2_heter = 0.4, 0.05
+        lambda1_notree = 0.17
+        lambda1_homo = 0.05
 
         # NO tree method
         B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
@@ -119,7 +119,7 @@ def main():
 
         # heter method
         B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, rho, eta)
-        B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=rho, eta=eta,
+        B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, eta=eta,
                                       B_init=B_init_heter)
         # 变量选择评估
         significance_pred_heter = variable_significance(B_heter)
