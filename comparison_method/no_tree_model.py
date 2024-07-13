@@ -76,8 +76,8 @@ def no_tree_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=100, L=30, tolera
         B_hat[g] = beta_estimation(X[g], Y[g], delta[g], lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L,
                                    tolerance_l=tolerance_l, delta_m=delta_dual, beta_init=beta_init)
     # B_refit = refit(X, Y, delta, B_hat)
-    return B_hat  # B_refit
-
+    # return B_refit
+    return B_hat
 
 if __name__ == "__main__":
     from data_generation import generate_simulated_data, true_B

@@ -3,6 +3,7 @@ import numpy as np
 
 from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
 from Hyperparameter.v0_hyperparameter_selection import grid_search_hyperparameters_v0
+from Hyperparameter.v1_hyperparameter_selection import grid_search_hyperparameters_v1
 from Initial_value_selection import initial_value_B
 from comparison_method.heterogeneity_model import heterogeneity_model
 from comparison_method.homogeneity_model import homogeneity_model
@@ -50,21 +51,26 @@ def main():
         significance_true = variable_significance(B)   # 变量显著性
         labels_true = sample_labels(B, N_test)  # 样本分组标签
 
-        parameter_ranges = {'lambda1': np.linspace(0.05, 0.4, 4),
+        parameter_ranges = {'lambda1': np.linspace(0.05, 0.3, 3),
                             'lambda2': np.linspace(0.05, 0.4, 4)}
         # 执行网格搜索
+        # 串行计算
+        lambda1_proposed, lambda2_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
+                                                                            rho=rho, eta=eta, method='proposed')
+        lambda1_heter, lambda2_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
+                                                                      rho=0.4, eta=eta, method='heter')
+        lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta,
+                                                        rho=rho, eta=eta, method='no_tree')
+        lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='homo')
+
         # lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta,
         #                                                                  method='proposed', rho=rho, eta=eta)
         # lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta,
         #                                                            method='heter', eta=eta)
-        # lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta,
-        #                                                 rho=rho, eta=eta, method='no_tree')
-        # lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='homo')
-
-        lambda1_proposed, lambda2_proposed = 0.28, 0.05
-        lambda1_heter, lambda2_heter = 0.4, 0.05
-        lambda1_notree = 0.17
-        lambda1_homo = 0.05
+        # lambda1_proposed, lambda2_proposed = 0.28, 0.05
+        # lambda1_heter, lambda2_heter = 0.4, 0.05
+        # lambda1_notree = 0.17
+        # lambda1_homo = 0.05
 
         # NO tree method
         B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
@@ -74,8 +80,8 @@ def main():
         TPR_notree = calculate_tpr(TP_notree, FN_notree)
         FPR_notree = calculate_fpr(FP_notree, TN_notree)
 
-        RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
         labels_pred_notree = sample_labels(B_notree, N_test)
+        RI_notree = calculate_ri(labels_true, labels_pred_notree)
         ARI_notree = calculate_ari(labels_true, labels_pred_notree)
         G_num_notree = group_num(B_notree)
 
@@ -104,8 +110,8 @@ def main():
         # 预测误差
         c_index_proposed = [C_index(B_proposed[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
         # 分组指标
-        RI_proposed = calculate_ri(TP_proposed, FP_proposed, TN_proposed, FN_proposed)
         labels_pred_proposed = sample_labels(B_proposed, N_test)
+        RI_proposed = calculate_ri(labels_true, labels_pred_proposed)
         ARI_proposed = calculate_ari(labels_true, labels_pred_proposed)
         G_num_proposed = group_num(B_proposed)
 
@@ -127,8 +133,8 @@ def main():
         TPR_heter = calculate_tpr(TP_heter, FN_heter)
         FPR_heter = calculate_fpr(FP_heter, TN_heter)
 
-        RI_heter = calculate_ri(TP_heter, FP_heter, TN_heter, FN_heter)
         labels_pred_heter = sample_labels(B_heter, N_test)
+        RI_heter = calculate_ri(labels_true, labels_pred_heter)
         ARI_heter = calculate_ari(labels_true, labels_pred_heter)
         G_num_heter = group_num(B_heter)
 
@@ -151,8 +157,8 @@ def main():
         TPR_homo = calculate_tpr(TP_homo, FN_homo)
         FPR_homo = calculate_fpr(FP_homo, TN_homo)
 
-        RI_homo = calculate_ri(TP_homo, FP_homo, TN_homo, FN_homo)
         labels_pred_homo = sample_labels(B_homo, N_test)
+        RI_homo = calculate_ri(labels_true, labels_pred_homo)
         ARI_homo = calculate_ari(labels_true, labels_pred_homo)
         G_num_homo = group_num(B_homo)
 
@@ -181,5 +187,5 @@ def main():
     print(f"running time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f} hours)")
 
 
-if __name__ == "__main__":   # 确保在 Windows 系统上正确处理多进程问题
+if __name__ == "__main__":   # 确保正确处理多进程
     main()

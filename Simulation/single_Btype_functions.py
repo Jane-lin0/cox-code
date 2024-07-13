@@ -39,7 +39,7 @@ def single_iteration(G, p, N_train, N_test, B, Correlation_type, rho=0.5, eta=0.
     TPR_notree = calculate_tpr(TP_notree, FN_notree)
     FPR_notree = calculate_fpr(FP_notree, TN_notree)
 
-    RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
+    RI_notree = calculate_ri(labels_true, labels_pred)
     G_num_notree = group_num(B_notree)
 
     sse_notree = SSE(B_notree, B)
@@ -67,7 +67,7 @@ def single_iteration(G, p, N_train, N_test, B, Correlation_type, rho=0.5, eta=0.
     # 预测误差
     c_index_proposed = [C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
     # 分组指标
-    RI_proposed = calculate_ri(TP_proposed, FP_proposed, TN_proposed, FN_proposed)
+    RI_proposed = calculate_ri(labels_true, labels_pred)
     G_num_proposed = group_num(B_hat)
 
     results['proposed']['TPR'] = TPR_proposed
@@ -80,43 +80,45 @@ def single_iteration(G, p, N_train, N_test, B, Correlation_type, rho=0.5, eta=0.
     return results
 
 
-def lambda_params(B_type, Correlation_type):
-    params = {
-        1: {
-            "Band1": {"lambda1": 0.29, "lambda2": 0.36},
-            "Band2": {"lambda1": 0.29, "lambda2": 0.15},
-            "AR(0.3)": {"lambda1": 0.22, "lambda2": 0.43},
-            "AR(0.7)": {"lambda1": 0.5, "lambda2": 0.5},
-            "CS(0.2)": {"lambda1": 0.08, "lambda2": 0.22},
-            "CS(0.4)": {"lambda1": 0.01, "lambda2": 0.01}
-        },
-        2: {
-            "Band1": {"lambda1": 0.29, "lambda2": 0.01},
-            "Band2": {"lambda1": 0.29, "lambda2": 0.08},
-            "AR(0.3)": {"lambda1": 0.36, "lambda2": 0.01},
-            "AR(0.7)": {"lambda1": 0.5, "lambda2": 0.5},
-            "CS(0.2)": {"lambda1": 0.15, "lambda2": 0.36},
-            "CS(0.4)": {"lambda1": 0.22, "lambda2": 0.22}
-        },
-        3: {
-            "Band1": {"lambda1": 0.22, "lambda2": 0.43},
-            "Band2": {"lambda1": 0.15, "lambda2": 0.08},
-            "AR(0.3)": {"lambda1": 0.5, "lambda2": 0.01},
-            "AR(0.7)": {"lambda1": 0.5, "lambda2": 0.5},
-            "CS(0.2)": {"lambda1": 0.08, "lambda2": 0.43},
-            "CS(0.4)": {"lambda1": 0.15, "lambda2": 0.01}
-        },
-        4: {
-            "Band1": {"lambda1": 0.36, "lambda2": 0.01},
-            "Band2": {"lambda1": 0.15, "lambda2": 0.01},
-            "AR(0.3)": {"lambda1": 0.22, "lambda2": 0.01},
-            "AR(0.7)": {"lambda1": 0.43, "lambda2": 0.36},
-            "CS(0.2)": {"lambda1": 0.08, "lambda2": 0.29},
-            "CS(0.4)": {"lambda1": 0.08, "lambda2": 0.08}
-        }
-    }
 
-    return params.get(B_type, {}).get(Correlation_type, None)
+
+# def lambda_params(B_type, Correlation_type):
+#     params = {
+#         1: {
+#             "Band1": {"lambda1": 0.29, "lambda2": 0.36},
+#             "Band2": {"lambda1": 0.29, "lambda2": 0.15},
+#             "AR(0.3)": {"lambda1": 0.22, "lambda2": 0.43},
+#             "AR(0.7)": {"lambda1": 0.5, "lambda2": 0.5},
+#             "CS(0.2)": {"lambda1": 0.08, "lambda2": 0.22},
+#             "CS(0.4)": {"lambda1": 0.01, "lambda2": 0.01}
+#         },
+#         2: {
+#             "Band1": {"lambda1": 0.29, "lambda2": 0.01},
+#             "Band2": {"lambda1": 0.29, "lambda2": 0.08},
+#             "AR(0.3)": {"lambda1": 0.36, "lambda2": 0.01},
+#             "AR(0.7)": {"lambda1": 0.5, "lambda2": 0.5},
+#             "CS(0.2)": {"lambda1": 0.15, "lambda2": 0.36},
+#             "CS(0.4)": {"lambda1": 0.22, "lambda2": 0.22}
+#         },
+#         3: {
+#             "Band1": {"lambda1": 0.22, "lambda2": 0.43},
+#             "Band2": {"lambda1": 0.15, "lambda2": 0.08},
+#             "AR(0.3)": {"lambda1": 0.5, "lambda2": 0.01},
+#             "AR(0.7)": {"lambda1": 0.5, "lambda2": 0.5},
+#             "CS(0.2)": {"lambda1": 0.08, "lambda2": 0.43},
+#             "CS(0.4)": {"lambda1": 0.15, "lambda2": 0.01}
+#         },
+#         4: {
+#             "Band1": {"lambda1": 0.36, "lambda2": 0.01},
+#             "Band2": {"lambda1": 0.15, "lambda2": 0.01},
+#             "AR(0.3)": {"lambda1": 0.22, "lambda2": 0.01},
+#             "AR(0.7)": {"lambda1": 0.43, "lambda2": 0.36},
+#             "CS(0.2)": {"lambda1": 0.08, "lambda2": 0.29},
+#             "CS(0.4)": {"lambda1": 0.08, "lambda2": 0.08}
+#         }
+#     }
+#
+#     return params.get(B_type, {}).get(Correlation_type, None)
 
 
     # for B_type in [1, 2, 3, 4]:

@@ -33,7 +33,7 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, rho=0.5, eta=0
                 # 检查是否找到了更好的参数
                 if mbic < best_mbic:
                     best_mbic = mbic
-                    best_params = {'lambda1': lambda1, 'lambda2': lambda2, 'mbic': best_mbic, 'B_hat': B_hat}
+                    best_params = {'lambda1': lambda1, 'lambda2': lambda2, 'mbic': best_mbic}
 
     elif method == 'heter':
         for lambda1 in parameter_ranges['lambda1']:
@@ -45,10 +45,11 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, rho=0.5, eta=0
                 # 检查是否找到了更好的参数
                 if mbic < best_mbic:
                     best_mbic = mbic
-                    best_params = {'lambda1': lambda1, 'lambda2': lambda2, 'mbic': best_mbic, 'B_hat': B_hat}
+                    best_params = {'lambda1': lambda1, 'lambda2': lambda2, 'mbic': best_mbic}
 
     # hyperparameter_figure_v1(mbic_records, best_params)
-    return best_params['lambda1'], best_params['lambda2'], best_params['B_hat']
+    print(f"method={method}, best params={best_params}")
+    return best_params['lambda1'], best_params['lambda2']
 
 
 def hyperparameter_figure_v1(mbic_records, best_params):

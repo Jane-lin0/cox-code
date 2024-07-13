@@ -62,8 +62,8 @@ def run_admm():
     TPR_notree = calculate_tpr(TP_notree, FN_notree)
     FPR_notree = calculate_fpr(FP_notree, TN_notree)
 
-    RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
     labels_pred_notree = sample_labels(B_notree, N_test)
+    RI_notree = calculate_ri(labels_true, labels_pred_notree)
     ARI_notree = calculate_ari(labels_true, labels_pred_notree)
     G_num_notree = group_num(B_notree)
 
@@ -93,8 +93,8 @@ def run_admm():
     # 预测误差
     c_index_proposed = [C_index(B_proposed[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
     # 分组指标
-    RI_proposed = calculate_ri(TP_proposed, FP_proposed, TN_proposed, FN_proposed)
     labels_pred_proposed = sample_labels(B_proposed, N_test)
+    RI_proposed = calculate_ri(labels_true, labels_pred_proposed)
     ARI_proposed = calculate_ari(labels_true, labels_pred_proposed)
     G_num_proposed = group_num(B_proposed)
 

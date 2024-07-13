@@ -2,7 +2,7 @@ import numpy as np
 
 from Initial_value_selection import initial_value_B
 from comparison_method.no_tree_model import no_tree_model
-from related_functions import compute_Delta, group_soft_threshold
+from related_functions import compute_Delta, group_soft_threshold, refit
 from data_generation import get_R_matrix
 
 
@@ -139,6 +139,7 @@ def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=0.4, eta=0.1, a=3, ma
                 B_hat[i, j] = 0
 
     # B_refit = refit(X, Y, delta, B_hat)
+    # return B_refit
     return B_hat
 
 
@@ -198,8 +199,8 @@ if __name__ == "__main__":
     TPR_notree = calculate_tpr(TP_notree, FN_notree)
     FPR_notree = calculate_fpr(FP_notree, TN_notree)
 
-    RI_notree = calculate_ri(TP_notree, FP_notree, TN_notree, FN_notree)
     labels_pred_notree = sample_labels(B_notree, N_test)
+    RI_notree = calculate_ri(labels_true, labels_pred_notree)
     ARI_notree = calculate_ari(labels_true, labels_pred_notree)
     G_num_notree = group_num(B_notree)
 
@@ -223,8 +224,8 @@ if __name__ == "__main__":
     TPR_heter = calculate_tpr(TP_heter, FN_heter)
     FPR_heter = calculate_fpr(FP_heter, TN_heter)
 
-    RI_heter = calculate_ri(TP_heter, FP_heter, TN_heter, FN_heter)
     labels_pred_heter = sample_labels(B_heter, N_test)
+    RI_heter = calculate_ri(labels_true, labels_pred_heter)
     ARI_heter = calculate_ari(labels_true, labels_pred_heter)
     G_num_heter = group_num(B_heter)
 

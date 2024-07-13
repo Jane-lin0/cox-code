@@ -73,6 +73,7 @@ def homogeneity_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, to
     B_homo = np.tile(beta, (G, 1))
 
     # B_refit = refit(X, Y, delta, B_homo)
+    # return B_refit
     return B_homo
 
 

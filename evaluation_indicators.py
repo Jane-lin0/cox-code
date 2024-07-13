@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
-from sklearn.metrics import adjusted_rand_score
+from sklearn.metrics import adjusted_rand_score, rand_score
 
 # from related_functions import internal_nodes, all_descendants, leaf_nodes, children, leaf_parents
 
@@ -79,8 +79,9 @@ def C_index(beta, X_ord, delta_ord, Y_ord):
 
 
 """ grouping result evaluation: RI, ARI, 分组组数 """
-def calculate_ri(TP, FP, TN, FN):
-    return (TP + TN) / (TP + FP + TN + FN)
+def calculate_ri(labels_true, labels_pred):
+    ri = rand_score(labels_true, labels_pred)
+    return ri
 
 
 # Adjusted Rand Index
