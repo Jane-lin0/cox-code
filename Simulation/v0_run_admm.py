@@ -45,9 +45,9 @@ def run_admm():
     parameter_ranges = {'lambda1': np.linspace(0.1, 0.4, 4),
                         'lambda2': np.linspace(0.05, 0.2, 3)}
     # 执行网格搜索
-    lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
+    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
                                                                      method='proposed')
-    lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='no_tree')
+    lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='no_tree')
     # lambda1_proposed, lambda2_proposed = 0.3, 0.05
     # lambda1_notree = 0.1
 

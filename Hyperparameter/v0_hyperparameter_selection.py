@@ -28,6 +28,7 @@ def grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=0.5, eta=0
             if mbic < best_mbic:
                 best_mbic = mbic
                 best_params = {'lambda1': lambda1, 'mbic': best_mbic}
+                B_best = B_hat.copy()
         # hyperparameter_figure_v0(mbic_records, best_params)
 
     elif method == 'homo':
@@ -42,9 +43,10 @@ def grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=0.5, eta=0
             if mbic < best_mbic:
                 best_mbic = mbic
                 best_params = {'lambda1': lambda1, 'mbic': best_mbic}
+                B_best = B_hat.copy()
         # hyperparameter_figure_v0(mbic_records, best_params)
     print(f"method={method}, best params={best_params}")
-    return best_params['lambda1']
+    return best_params['lambda1'], B_best
 
 
     # elif method is None:

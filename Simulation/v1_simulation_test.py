@@ -55,14 +55,13 @@ def main():
                             'lambda2': np.linspace(0.05, 0.4, 4)}
         # 执行网格搜索
         # 串行计算
-        lambda1_proposed, lambda2_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
-                                                                            rho=rho, eta=eta, method='proposed')
-        lambda1_heter, lambda2_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
-                                                                      rho=0.4, eta=eta, method='heter')
-        lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta,
+        lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
+                                                                         rho=rho, eta=eta, method='proposed')
+        lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
+                                                                   rho=0.3, eta=eta, method='heter')
+        lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta,
                                                         rho=rho, eta=eta, method='no_tree')
-        lambda1_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='homo')
-
+        lambda1_homo, B_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='homo')
         # lambda1_proposed, lambda2_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta,
         #                                                                  method='proposed', rho=rho, eta=eta)
         # lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta,
@@ -73,7 +72,7 @@ def main():
         # lambda1_homo = 0.05
 
         # NO tree method
-        B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
+        # B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
         # 变量选择评估
         significance_pred_notree = variable_significance(B_notree)
         TP_notree, FP_notree, TN_notree, FN_notree = calculate_confusion_matrix(significance_true, significance_pred_notree)
@@ -98,8 +97,8 @@ def main():
 
         # Proposed method
         # B_init_proposed = initial_value_B(X, Y, delta, lambda1=lambda1_proposed, B_init=None)
-        B_proposed = ADMM_optimize(X, Y, delta, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=rho, eta=eta,
-                                   B_init=B_notree)
+        # B_proposed = ADMM_optimize(X, Y, delta, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=rho, eta=eta,
+        #                            B_init=B_notree)
         # 变量选择评估
         significance_pred_proposed = variable_significance(B_proposed)
         TP_proposed, FP_proposed, TN_proposed, FN_proposed = calculate_confusion_matrix(significance_true, significance_pred_proposed)
@@ -124,9 +123,9 @@ def main():
         results[key]['proposed']['G'].append(G_num_proposed)
 
         # heter method
-        B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, rho, eta)
-        B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, eta=eta,
-                                      B_init=B_init_heter)
+        # B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, rho, eta)
+        # B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, eta=eta,
+        #                               B_init=B_init_heter)
         # 变量选择评估
         significance_pred_heter = variable_significance(B_heter)
         TP_heter, FP_heter, TN_heter, FN_heter = calculate_confusion_matrix(significance_true, significance_pred_heter)
@@ -150,7 +149,7 @@ def main():
         results[key]['heter']['G'].append(G_num_heter)
 
         # homo method
-        B_homo = homogeneity_model(X, Y, delta, lambda1=lambda1_homo, rho=rho, eta=eta)
+        # B_homo = homogeneity_model(X, Y, delta, lambda1=lambda1_homo, rho=rho, eta=eta)
         # 变量选择评估
         significance_pred_homo = variable_significance(B_homo)
         TP_homo, FP_homo, TN_homo, FN_homo = calculate_confusion_matrix(significance_true, significance_pred_homo)
