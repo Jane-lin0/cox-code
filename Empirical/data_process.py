@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 # 读取数据文件
 file_path = r"C:\Users\janline\Desktop\毕业论文\信贷数据\historical_data_2023\historical_data_2023Q1\historical_data_2023Q1.txt"
 
@@ -11,3 +12,4 @@ df.to_csv(r'C:\Users\janline\Desktop\毕业论文\信贷数据\processed\histori
 # df.to_excel(r'C:\Users\janline\Desktop\毕业论文\信贷数据\processed\historical_data_2023Q1.xlsx', index=False)
 
 print('data processed')
+

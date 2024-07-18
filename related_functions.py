@@ -1,3 +1,4 @@
+import pickle
 import sys
 import warnings
 import numpy as np
@@ -328,18 +329,16 @@ def define_tree_structure(tree_structure="G5"):
                     #    5      6
                     #  / | \   / \
                     # 0  1  2  3  4
-    elif tree_structure == "G6":
-        tree.add_nodes_from(range(10))
-        # tree.add_edges_from([
-        #     (10, 7), (10, 8), (10, 9),
-        #     (7, 1), (7, 2),   (8, 3), (8, 4),   (9, 5), (9, 6)
-        # ])
+    elif tree_structure == "empirical":
+        with open(r"C:\Users\janline\Desktop\毕业论文\cox_code\Empirical\tree_index.pkl", "rb") as f:
+            tree = pickle.load(f)
+
     return tree
 
 
 def internal_nodes(tree):
     # 获取有出边的节点，即内部节点
-    return [node for node in tree.nodes() if tree.out_degree(node) > 0]
+    return [node for node in tree.nodes() if tree.out_degree(node) > 0]   # 包含根节点
 
 
 def leaf_nodes(tree):
@@ -348,7 +347,7 @@ def leaf_nodes(tree):
 
 
 def children(tree, node):
-    # 获取一个节点的所有子节点
+    # 获取一个节点的所有子节点（不含孙节点）
     return list(tree.successors(node))
 
 
@@ -361,12 +360,45 @@ def all_descendants(tree, node):
 def leaf_parents(tree):
     # 找到所有叶节点（出度为0的节点）
     leaves = [node for node in tree.nodes if tree.out_degree(node) == 0]
-    # 找到叶节点的父节点（叶节点的所有前驱）
     parent_nodes = set()
     for leaf in leaves:
         parents = list(tree.predecessors(leaf))
         parent_nodes.update(parents)
-    return list(parent_nodes)
+    return list(parent_nodes)   # 所有叶节点的父节点（无祖节点）
+
+
+def get_leaf_and_ancestors(tree, leaf):
+    ancestors = list(nx.ancestors(tree, leaf))
+    ancestors.append(leaf)
+    ancestors.sort()
+    return ancestors
+
+
+def get_D(tree):
+    leaves = [node for node in tree.nodes if tree.out_degree(node) == 0]
+    G = len(leaves)
+    K = G + len(internal_nodes(tree))
+    D = np.empty(shape=(G, K))
+    for leaf in leaves:
+        vector = np.zeros(K)
+        ancestors = get_leaf_and_ancestors(tree, leaf) # 对应叶节点及其祖父节点
+        vector[ancestors] = 1
+        D[leaf] = vector
+    return D
+
+
+def get_gamma(B, tree):
+    # Gamma1 初值设置：父节点 = 子节点的平均，叶子节点 = beta_g - 父节点
+    G = len(B)
+    p = B.shape[1]
+    K = G + len([node for node in tree.nodes() if tree.out_degree(node) > 0])  # internal_nodes(tree)
+    Gamma = np.vstack([B, np.zeros((K-G, p))])
+    internal_nodes = [node for node in tree.nodes() if tree.out_degree(node) > 0]
+    for node in internal_nodes:
+        children = list(tree.successors(node))
+        Gamma[node] = np.mean(Gamma[children], axis=0)
+        Gamma[children] -= Gamma[node]
+    return Gamma
 
 
 def get_coef_estimation(B3, Gamma1, D):

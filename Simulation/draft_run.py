@@ -53,8 +53,8 @@ def run_simulations(repeats):  # [1, 2, 3, 4]   # "Band1", "Band2", "CS(0.2)", "
 if __name__ == "__main__":
     start_time = time.time()
 
-    repeats = 1
-    results = run_simulations(repeats=repeats)  # 或者改为100
+    repeats = 1     # 重复次数
+    results = run_simulations(repeats=repeats)
     print(results)
 
     # 计算运行时间

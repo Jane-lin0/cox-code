@@ -2,14 +2,14 @@ import numpy as np
 
 from data_generation import get_R_matrix, generate_simulated_data, true_B
 from related_functions import define_tree_structure, compute_Delta, internal_nodes, all_descendants, \
-    group_soft_threshold, gradient_descent_adam, get_coef_estimation, refit
+    group_soft_threshold, gradient_descent_adam, get_coef_estimation, refit, get_D, get_gamma
 
 
 def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_iter_m=200, max_iter_l=50, tolerance_l=1e-4,
                   delta_primal=5e-5, delta_dual=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
-    tree = define_tree_structure()
+    tree = define_tree_structure(tree_structure="empirical")
     K = G + len(internal_nodes(tree))
     N = np.sum([len(X[g]) for g in range(G)])
     R = [get_R_matrix(Y[g]) for g in range(G)]
@@ -20,18 +20,14 @@ def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_iter_m
         B1 = B_init.copy()
     B2 = B1.copy()
     B3 = B1.copy()
+    Gamma1 = get_gamma(B1, tree)   # Gamma1 初值设置：父节点 = 子节点的平均，叶子节点 = beta_g - 父节点
     # Gamma1 = np.vstack([B1, np.zeros((K-G, p))])
-    D_gamma = np.array([[2/3, -1/3, -1/3, 0, 0], [-1/3, 2/3, -1/3, 0, 0], [-1/3, -1/3, 2/3, 0, 0], [0, 0, 0, 1/2, -1/2],
-                       [0, 0, 0, -1/2, 1/2], [1/6, 1/6, 1/6, -1/4, -1/4], [-1/6, -1/6, -1/6, 1/4, 1/4], [1/6, 1/6, 1/6, 1/4, 1/4]])
-    Gamma1 = D_gamma @ B1   # Gamma1 初值设置：父节点 = 子节点的平均，叶子节点 = beta_g - 父节点
     Gamma2 = Gamma1.copy()
     U1 = np.zeros((G, p))
     U2 = np.zeros((G, p))
     W1 = np.zeros((K, p))
-    # D = np.hstack([np.eye(G), np.zeros((G, K - G))])
     # 根据树结构设定 D
-    D = np.array([[1, 0, 0, 0, 0, 1, 0, 1], [0, 1, 0, 0, 0, 1, 0, 1], [0, 0, 1, 0, 0, 1, 0, 1],
-                  [0, 0, 0, 1, 0, 0, 1, 1], [0, 0, 0, 0, 1, 0, 1, 1]])
+    D = get_D(tree)   # beta1 = gamma1 + gamma6 + gamma8
     D_tilde = np.vstack([D, np.eye(K)])  # D 为二元矩阵，np.eye(K) 是 K 维单位矩阵
     D_c = np.linalg.inv(D_tilde.T @ D_tilde) @ D_tilde.T
 
@@ -141,11 +137,11 @@ def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_iter_m
 
 if __name__ == "__main__":
     # 生成模拟数据
-    G = 5  # 类别数
-    p = 50  # 变量维度
+    G = 36  # 类别数
+    p = 100  # 变量维度
     N_class = np.array([200]*G)
-    B = true_B(p, B_type=1)
-    X, Y, delta = generate_simulated_data(G, N_class, p, B, method="Band1", seed=12)
+    B = true_B(G, p, B_type=1)
+    X, Y, delta = generate_simulated_data(G, p, N_class, B, method="Band1", seed=12)
 
     B_hat = ADMM_optimize(X, Y, delta, lambda1=0.3, lambda2=0.05, rho=1, eta=0.2, a=3,
                           delta_primal=5e-5, delta_dual=5e-5)

@@ -176,10 +176,10 @@ if __name__ == "__main__":
         'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []}
     }
 
-    B = true_B(p, B_type=B_type)
+    B = true_B(G, p, B_type=B_type)
 
-    X, Y, delta = generate_simulated_data(G, N_class, p, B, method=Correlation_type, seed=0)
-    X_test, Y_test, delta_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type, seed=1)
+    X, Y, delta = generate_simulated_data(G, p, N_class, B, method=Correlation_type, seed=0)
+    X_test, Y_test, delta_test = generate_simulated_data(G, p, N_test, B, method=Correlation_type, seed=1)
 
     # 执行网格搜索
     # lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='heter', rho=rho,

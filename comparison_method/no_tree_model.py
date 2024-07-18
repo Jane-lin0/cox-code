@@ -99,9 +99,9 @@ if __name__ == "__main__":
     data_type = "Band1"  # X 的协方差形式
     B_type = 1
 
-    B = true_B(p, B_type=B_type)
-    X, Y, delta = generate_simulated_data(G, N_class, p, B, method=data_type, seed=True)
-    X_test, Y_test, delta_test = generate_simulated_data(G, N_test, p, B, method=data_type)
+    B = true_B(G, p, B_type=B_type)
+    X, Y, delta = generate_simulated_data(G, p, N_class, B, method=data_type, seed=True)
+    X_test, Y_test, delta_test = generate_simulated_data(G, p, N_test, B, method=data_type)
 
     # lambda1 = 0.1
     parameter_ranges = {'lambda1': np.linspace(0.05, 0.2, 4)}

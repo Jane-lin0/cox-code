@@ -95,8 +95,8 @@ if __name__ == "__main__":
     eta = 0.2
     N_class = np.array([200]*G)   # 每个类别的样本数量
 
-    B = true_B(p, B_type=1)
-    X, Y, delta = generate_simulated_data(G, N_class, p, B, method="Band1", seed=0)  # 生成模拟数据
+    B = true_B(G, p, B_type=1)
+    X, Y, delta = generate_simulated_data(G, p, N_class, B, method="Band1", seed=0)  # 生成模拟数据
 
     # 执行网格搜索
     parameter_ranges = {'lambda1': np.linspace(0.01, 0.3, 3),

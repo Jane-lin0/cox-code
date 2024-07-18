@@ -21,7 +21,7 @@ from main_ADMM import ADMM_optimize
 def main():
     start_time = time.time()
     """ ===================================== """
-    G = 5  # 类别数
+    G = 36  # 类别数
     p = 100  # 变量维度
     rho = 1
     eta = 0.2
@@ -32,7 +32,7 @@ def main():
     N_train = np.array([200] * G)    # 训练样本
     N_test = np.array([500] * G)
     """ ===================================== """
-    B = true_B(p, B_type=B_type)  # 真实系数 B
+    B = true_B(G, p, B_type=B_type)  # 真实系数 B
 
     results = {}
     key = (B_type, Correlation_type)
@@ -45,9 +45,9 @@ def main():
 
     for i in range(1):
         # train data
-        X, Y, delta = generate_simulated_data(G, N_train, p, B, method=Correlation_type, seed=i)
+        X, Y, delta = generate_simulated_data(G, p, N_train, B, method=Correlation_type, seed=i)
         # test data
-        X_test, Y_test, delta_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type, seed=i+1)
+        X_test, Y_test, delta_test = generate_simulated_data(G, p, N_test, B, method=Correlation_type, seed=i + 1)
         significance_true = variable_significance(B)   # 变量显著性
         labels_true = sample_labels(B, N_test)  # 样本分组标签
 

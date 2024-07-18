@@ -105,8 +105,8 @@ if __name__ == "__main__":
 
     parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 10)}
 
-    B = true_B(p, B_type=1)
-    X, Y, delta, R = generate_simulated_data(G, N_class, p, B, method="Band1")  # 生成模拟数据
+    B = true_B(G, p, B_type=1)
+    X, Y, delta, R = generate_simulated_data(G, p, N_class, B, method="Band1")  # 生成模拟数据
 
     # 执行网格搜索
     lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, Y, R, eta=eta, method='no_tree')

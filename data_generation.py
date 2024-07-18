@@ -10,12 +10,12 @@ def get_R_matrix(Y_g):
     return R_g
 
 
-def true_B(p, B_type):
+def true_B(G, p, B_type):
     # 真实系数
-    if B_type == 1:  # lambda1=0.2, lambda2=0.3
-        B = np.tile(np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)]),
-                         (5, 1))  # 真实 G = 1
-    elif B_type == 2:  # lambda1=0.2, lambda2=1   # lambda2=0.5~1.5
+    if B_type == 1:
+        B = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
+                         (G, 1))  # 真实 G = 1
+    elif B_type == 2:
         B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
                        (3, 1))  # 真实 G = 2
         B_G2 = np.tile(np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)]),
@@ -23,16 +23,9 @@ def true_B(p, B_type):
         B = np.vstack([B_G1, B_G2])
     elif B_type == 3:
         B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
-                       (3, 1))  # 真实 G = 3
+                       (3, 1))
         B_G2 = np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)])
         B_G3 = np.hstack([np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(10)]), np.zeros(p - 10)])
-        B = np.vstack([B_G1, B_G2, B_G3])
-    elif B_type == 4:  # 真实 G = 3
-        B_G1 = np.tile(np.hstack([np.array([0.7 if i % 2 == 0 else -0.7 for i in range(10)]), np.zeros(p - 10)]),
-                       (2, 1))
-        B_G2 = np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)])
-        B_G3 = np.tile(np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)]),
-                       (2, 1))
         B = np.vstack([B_G1, B_G2, B_G3])
     return B
 
@@ -61,7 +54,7 @@ def sigma_type(method, p):
     return sigma
 
 
-def generate_simulated_data(G, N_class, p, B, method, censoring_rate=0.25, seed=None):
+def generate_simulated_data(G, p, N_class, B, method, censoring_rate=0.25, seed=None):
     # 定义模拟数据生成函数
     if seed is not None:
         np.random.seed(seed+2000)

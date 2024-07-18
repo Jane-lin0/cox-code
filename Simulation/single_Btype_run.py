@@ -25,7 +25,7 @@ if __name__ == "__main__":
     # lambda1_init = 0.1
 
 
-    B = true_B(p, B_type=B_type)  # 真实系数 B
+    B = true_B(G, p, B_type=B_type)  # 真实系数 B
 
     key = (B_type, Correlation_type)
     results = {

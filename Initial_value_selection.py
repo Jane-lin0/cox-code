@@ -86,7 +86,7 @@ if __name__ == "__main__":
     np.random.seed(1900)
     N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
     B = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]), (G, 1))   # lambda1=0.1
-    X, Y, delta, R = generate_simulated_data(G, N_class, p, B, )
+    X, Y, delta, R = generate_simulated_data(G, p, N_class, B, )
 
     B_initial = initial_value_B(X, Y, delta, lambda1=0.1)
     SSE = SSE(B_initial, B)

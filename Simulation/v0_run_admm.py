@@ -3,6 +3,7 @@ import numpy as np
 
 from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
 from Hyperparameter.v0_hyperparameter_selection import grid_search_hyperparameters_v0
+from Hyperparameter.v1_hyperparameter_selection import grid_search_hyperparameters_v1
 from comparison_method.no_tree_model import no_tree_model
 from related_functions import define_tree_structure
 from Initial_value_selection import initial_value_B
@@ -19,8 +20,8 @@ proposed method vs no_tree
 def run_admm():
     start_time = time.time()
     ''' ==========   参数修改区   ============ '''
-    G = 5    # 类别数
-    p = 50  # 变量维度
+    G = 36    # 类别数
+    p = 100  # 变量维度
     rho = 1
     eta = 0.2
 
@@ -31,23 +32,24 @@ def run_admm():
     N_test = np.array([500]*G)
     '''  ======================================  '''
 
-    B = true_B(p, B_type=B_type)  # 真实系数 B
+    B = true_B(G, p, B_type=B_type)  # 真实系数 B
     results = {
         'proposed': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
         'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []}
     }
 
     # train data
-    X, Y, delta = generate_simulated_data(G, N_train, p, B, method=data_type, seed=0)
+    X, Y, delta = generate_simulated_data(G, p, N_train, B, method=data_type, seed=0)
     # test data
-    X_test, Y_test, delta_test = generate_simulated_data(G, N_test, p, B, method=data_type, seed=1)
+    X_test, Y_test, delta_test = generate_simulated_data(G, p, N_test, B, method=data_type, seed=1)
 
-    parameter_ranges = {'lambda1': np.linspace(0.1, 0.4, 4),
-                        'lambda2': np.linspace(0.05, 0.2, 3)}
+    parameter_ranges = {'lambda1': np.linspace(0.05, 0.3, 3),
+                        'lambda2': np.linspace(0.05, 0.4, 4)}
     # 执行网格搜索
-    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
-                                                                     method='proposed')
-    lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta, method='no_tree')
+    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
+                                                                                    rho=rho, eta=eta, method='proposed')
+    lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta,
+                                                              rho=rho, eta=eta, method='no_tree')
     # lambda1_proposed, lambda2_proposed = 0.3, 0.05
     # lambda1_notree = 0.1
 

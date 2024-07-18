@@ -28,13 +28,12 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
     N_train = np.array([200] * G)  # 训练样本
     N_test = np.array([500] * G)
 
-    B = true_B(p, B_type=B_type)  # 真实系数 B
+    B = true_B(G, p, B_type=B_type)  # 真实系数 B
 
     # train data
-    X, Y, delta, = generate_simulated_data(G, N_train, p, B, method=Correlation_type, seed=repeat_id)
+    X, Y, delta, = generate_simulated_data(G, p, N_train, B, method=Correlation_type, seed=repeat_id)
     # test data
-    X_test, Y_test, delta_test = generate_simulated_data(G, N_test, p, B, method=Correlation_type,
-                                                                 seed=repeat_id + 1)
+    X_test, Y_test, delta_test = generate_simulated_data(G, p, N_test, B, method=Correlation_type, seed=repeat_id + 1)
     significance_true = variable_significance(B)  # 变量显著性
     labels_true = sample_labels(B, N_test)  # 样本分组标签
 
