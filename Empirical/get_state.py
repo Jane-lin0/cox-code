@@ -6,7 +6,7 @@ import pgeocode
 start_time = time.time()
 
 # 读取数据文件
-file_path = r"C:\Users\janline\Desktop\毕业论文\信贷数据\historical_data_2023\historical_data_2023Q1\historical_data_2023Q1.txt"
+file_path = r"historical_data_2023Q1.txt"
 
 # 使用read_csv读取数据，并指定分隔符为管道符
 df = pd.read_csv(file_path, sep='|', header=None)
@@ -85,18 +85,18 @@ for region, states in regions.items():
     for state in states:
         state_to_region[state] = region
 df_location['region'] = df_location['state_code'].map(state_to_region)
-df_location.to_excel(r'C:\Users\janline\Desktop\毕业论文\信贷数据\processed\postalCode_location.xlsx', index=False)
+df_location.to_excel(r'postalCode_location.xlsx', index=False)
 
 
 # 将查询结果与原数据合并
 df = df.merge(df_location[['zipcode_prefix', 'region', 'state_code']],
               left_on='zipcode_prefix', right_on='zipcode_prefix', how='left').dropna(subset=['region'])
-df.to_excel(r'C:\Users\janline\Desktop\毕业论文\信贷数据\processed\state_added.xlsx', index=False)
+df.to_excel(r'state_added.xlsx', index=False)
 
 
 # 分组并计算样本数
 region_state_counts = df.groupby(['region', 'state_code']).size().reset_index(name='sample_count')
-region_state_counts.to_excel(r'C:\Users\janline\Desktop\毕业论文\信贷数据\processed\region_state_counts.xlsx', index=False)
+region_state_counts.to_excel(r'region_state_counts.xlsx', index=False)
 
 print('file saved')
 

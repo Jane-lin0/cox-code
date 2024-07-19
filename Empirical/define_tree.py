@@ -6,8 +6,8 @@ import networkx as nx
 start_time = time.time()
 
 # 读取数据
-df_full = pd.read_excel(r"C:\Users\janline\Desktop\毕业论文\信贷数据\processed\state_added.xlsx")
-region_state_counts = pd.read_excel(r"C:\Users\janline\Desktop\毕业论文\信贷数据\processed\region_state_counts.xlsx")
+df_full = pd.read_excel(r"state_added.xlsx")
+region_state_counts = pd.read_excel(r"region_state_counts.xlsx")
 
 # 计算样本数的分位数
 quantile = region_state_counts['sample_count'].quantile(0.7)  # 0.75(G=13)，0.7(G=16)
@@ -66,7 +66,7 @@ print("Postal to group mapping:", postal_to_group)
 df['Group'] = df['state_code'].apply(lambda x: postal_to_group.get(x, -1))
 
 # 保存结果
-df.to_excel(r"C:\Users\janline\Desktop\毕业论文\信贷数据\processed\state_added_with_groups.xlsx", index=False)
+df.to_excel(r"state_added_with_groups.xlsx", index=False)
 
 # 生成索引树
 # 自定义名称索引
