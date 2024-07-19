@@ -18,9 +18,10 @@ def single_iteration(G, p, N_train, N_test, B, Correlation_type, rho=0.5, eta=0.
     }
 
     # train data
-    X, Y, delta, R = generate_simulated_data(G, p, N_train, B, method=Correlation_type)
+    X, Y, delta, R = generate_simulated_data(p, N_train, N_test, B, Correlation_type=Correlation_type)
     # test data
-    X_test, Y_test, delta_test, R_test = generate_simulated_data(G, p, N_test, B, method=Correlation_type)
+    X_test, Y_test, delta_test, R_test = generate_simulated_data(p, N_test, N_test, B,
+                                                                 Correlation_type=Correlation_type)
 
     parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 5),
                         'lambda2': np.linspace(0.01, 0.6, 5)}

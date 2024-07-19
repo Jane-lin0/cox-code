@@ -6,17 +6,24 @@ import networkx as nx
 start_time = time.time()
 
 # 读取数据
-df = pd.read_excel(r"C:\Users\janline\Desktop\毕业论文\信贷数据\processed\state_added.xlsx")
+df_full = pd.read_excel(r"C:\Users\janline\Desktop\毕业论文\信贷数据\processed\state_added.xlsx")
+region_state_counts = pd.read_excel(r"C:\Users\janline\Desktop\毕业论文\信贷数据\processed\region_state_counts.xlsx")
+
+# 计算样本数的分位数
+quantile = region_state_counts['sample_count'].quantile(0.7)  # 0.75(G=13)，0.7(G=16)
+# 过滤掉样本数小于分位数的行
+filtered_counts = region_state_counts[region_state_counts['sample_count'] >= quantile]
+
+# 合并原始数据框和过滤后的样本数数据框，以保留符合条件的行
+df = df_full.merge(filtered_counts[['region', 'state_code']], on=['region', 'state_code'], how='inner')
 
 # 初始化有向图
 tree = nx.DiGraph()
 
 # 确保邮政编码前缀是字符串类型
 df['zipcode_prefix'] = df['zipcode_prefix'].astype(str)
-
 # 添加根节点 "US"
 tree.add_node("US")
-
 # 添加节点和边
 for state in df['state_code'].unique():
     region = df.loc[df['state_code'] == state, 'region'].values[0]
@@ -61,15 +68,25 @@ df['Group'] = df['state_code'].apply(lambda x: postal_to_group.get(x, -1))
 # 保存结果
 df.to_excel(r"C:\Users\janline\Desktop\毕业论文\信贷数据\processed\state_added_with_groups.xlsx", index=False)
 
-
 # 生成索引树
 # 自定义名称索引
-node_to_index = {'FL': 0, 'LA': 1, 'AR': 2, 'KY': 3, 'TN': 4, 'VA': 5, 'SC': 6, 'GA': 7, 'NC': 8, 'AL': 9,
-                 'CO': 10, 'UT': 11, 'ID': 12, 'NV': 13, 'MO': 14, 'MN': 15, 'KS': 16, 'IA': 17, 'MD': 18,
-                 'NY': 19, 'PA': 20, 'NJ': 21, 'MI': 22, 'IL': 23, 'IN': 24, 'WI': 25, 'OH': 26, 'TX': 27,
-                 'OK': 28, 'AZ': 29, 'NM': 30, 'CA': 31, 'OR': 32, 'WA': 33, 'MA': 34, 'CT': 35, 'Southeast': 36,
-                 'Appalachian': 37, 'Mountain': 38, 'Central': 39, 'Mid_Atlantic': 40, 'Great_Lakes': 41,
-                 'Southwest': 42, 'Pacific_Coast': 43, 'New_England': 44, 'US': 45}
+# node_to_index = {'FL': 0, 'LA': 1, 'AR': 2, 'KY': 3, 'TN': 4, 'VA': 5, 'SC': 6, 'GA': 7, 'NC': 8, 'AL': 9,
+#                  'CO': 10, 'UT': 11, 'ID': 12, 'NV': 13, 'MO': 14, 'MN': 15, 'KS': 16, 'IA': 17, 'MD': 18,
+#                  'NY': 19, 'PA': 20, 'NJ': 21, 'MI': 22, 'IL': 23, 'IN': 24, 'WI': 25, 'OH': 26, 'TX': 27,
+#                  'OK': 28, 'AZ': 29, 'NM': 30, 'CA': 31, 'OR': 32, 'WA': 33, 'MA': 34, 'CT': 35, 'Southeast': 36,
+#                  'Appalachian': 37, 'Mountain': 38, 'Central': 39, 'Mid_Atlantic': 40, 'Great_Lakes': 41,
+#                  'Southwest': 42, 'Pacific_Coast': 43, 'New_England': 44, 'US': 45}
+
+node_to_index = postal_to_group.copy()
+internal_nodes = [node for node in tree.nodes() if tree.out_degree(node) > 0]  # 需注意节点顺序
+if 'US' in internal_nodes:
+    internal_nodes.remove('US')
+    internal_nodes.append('US')  # 确保'US'根节点的索引最大
+
+max_value = max(node_to_index.values())
+for node in internal_nodes:
+    max_value += 1
+    node_to_index[node] = max_value
 
 # 复制原树结构
 tree_index = tree.copy()

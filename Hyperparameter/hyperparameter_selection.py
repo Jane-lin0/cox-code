@@ -1,7 +1,7 @@
 import time
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from data_generation import generate_simulated_data, true_B
+from data_generation import generate_simulated_data
 from Hyperparameter.hyperparameter_functions import evaluate_hyperparameters_shared
 # hyperparameter_figure, evaluate_hyperparameters
 
@@ -62,8 +62,9 @@ if __name__ == "__main__":
 
     for B_type in [1]:   # [1, 2, 3, 4]
         for Correlation_type in ["Band1"]: # ["Band1","Band2", "AR(0.3)", "AR(0.7)", "CS(0.2)", "CS(0.4)"]:   # ["AR(0.7)"]
-            B = true_B(G, p, B_type=B_type)
-            X, Y, delta, R = generate_simulated_data(G, p, N_train, B, method=Correlation_type, seed=True)  # 生成模拟数据
+            # B = true_B(G, p, B_type=B_type)
+            X, Y, delta, R = generate_simulated_data(p, N_train, N_test, B, Correlation_type=Correlation_type,
+                                                     seed=True)  # 生成模拟数据
 
             # 定义参数范围
             parameter_ranges = {

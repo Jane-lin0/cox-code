@@ -91,20 +91,12 @@ df_location.to_excel(r'C:\Users\janline\Desktop\毕业论文\信贷数据\proces
 # 将查询结果与原数据合并
 df = df.merge(df_location[['zipcode_prefix', 'region', 'state_code']],
               left_on='zipcode_prefix', right_on='zipcode_prefix', how='left').dropna(subset=['region'])
+df.to_excel(r'C:\Users\janline\Desktop\毕业论文\信贷数据\processed\state_added.xlsx', index=False)
+
 
 # 分组并计算样本数
 region_state_counts = df.groupby(['region', 'state_code']).size().reset_index(name='sample_count')
 region_state_counts.to_excel(r'C:\Users\janline\Desktop\毕业论文\信贷数据\processed\region_state_counts.xlsx', index=False)
-
-# 计算样本数的分位数
-quantile = region_state_counts['sample_count'].quantile(0.30)
-# 过滤掉样本数小于分位数的行
-filtered_counts = region_state_counts[region_state_counts['sample_count'] >= quantile]
-
-# 合并原始数据框和过滤后的样本数数据框，以保留符合条件的行
-df_filtered = df.merge(filtered_counts[['region', 'state_code']], on=['region', 'state_code'], how='inner')
-
-df_filtered.to_excel(r'C:\Users\janline\Desktop\毕业论文\信贷数据\processed\state_added.xlsx', index=False)
 
 print('file saved')
 

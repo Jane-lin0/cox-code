@@ -10,7 +10,22 @@ def get_R_matrix(Y_g):
     return R_g
 
 
-def true_B(G, p, B_type):
+# def true_B(G, p, B_type):
+#
+#     return B
+
+
+# def sigma_type(method, p):
+#
+#     return sigma
+
+
+def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censoring_rate=0.25, seed=None):
+    # 定义模拟数据生成函数
+    if seed is not None:
+        np.random.seed(seed+2000)
+
+    G = len(N_train)
     # 真实系数
     if B_type == 1:
         B = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
@@ -22,51 +37,40 @@ def true_B(G, p, B_type):
                        (2, 1))
         B = np.vstack([B_G1, B_G2])
     elif B_type == 3:
-        B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
+        B_G1 = np.tile(np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)]),
                        (3, 1))
-        B_G2 = np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)])
-        B_G3 = np.hstack([np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(10)]), np.zeros(p - 10)])
+        B_G2 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(5)]), np.zeros(5),
+                          np.array([0.5 if i % 2 == 0 else -0.5 for i in range(5)]), np.zeros(p - 15)])
+        B_G3 = np.hstack([np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(5)]), np.zeros(5),
+                          np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(5)]), np.zeros(p - 15)])
         B = np.vstack([B_G1, B_G2, B_G3])
-    return B
 
-
-def sigma_type(method, p):
+    # sigma = sigma_type(method, p)
     # X 的协方差矩阵
-    if method == "AR(0.3)":
+    if Correlation_type == "AR(0.3)":
         rho = 0.3
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
-    elif method == "AR(0.7)":
+    elif Correlation_type == "AR(0.7)":
         rho = 0.7
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
-    elif method == "band1":
+    elif Correlation_type == "band1":
         sigma = np.vstack([[int(i == j) + 0.4 * int(np.abs(i - j) == 1) for j in range(p)] for i in range(p)])
-    elif method == "band2":
+    elif Correlation_type == "band2":
         sigma = np.vstack([[int(i == j) + 0.6 * int(np.abs(i - j) == 1) + 0.2 * int(np.abs(i - j) == 2)
                             for j in range(p)] for i in range(p)])
-    elif method == "CS(0.2)":
+    elif Correlation_type == "CS(0.2)":
         rho = 0.2
         sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
-    elif method == "CS(0.4)":
+    elif Correlation_type == "CS(0.4)":
         rho = 0.4
         sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
     else:
         sigma = np.eye(p)
-    return sigma
 
-
-def generate_simulated_data(G, p, N_class, B, method, censoring_rate=0.25, seed=None):
-    # 定义模拟数据生成函数
-    if seed is not None:
-        np.random.seed(seed+2000)
-
-    sigma = sigma_type(method, p)
-
-    X = []
-    Y = []
-    delta = []
-    # R = []
+    train_data = dict(X=[], Y=[], delta=[])
+    test_data = dict(X=[], Y=[], delta=[])
     for g in range(G):
-        N_g = N_class[g]
+        N_g = N_train[g] + N_test[g]
 
         # 生成自变量 X^{(g)}
         X_g = np.random.multivariate_normal(mean=np.zeros(p), cov=sigma, size=N_g)
@@ -79,16 +83,38 @@ def generate_simulated_data(G, p, N_class, B, method, censoring_rate=0.25, seed=
         Y_g = np.minimum(T_g, C_g)
         # 生成删失标记 delta^{(g)}
         delta_g = (T_g <= C_g).astype(int)
-
         # 生成示性函数矩阵 R^{(g)}
         # R_g = get_R_matrix(Y_g)
 
-        X.append(X_g)
-        Y.append(Y_g)
-        delta.append(delta_g)
-        # R.append(R_g)
+        train_data['X'].append(X_g[:N_train[g], :])
+        test_data['X'].append(X_g[N_train[g]:, :])
+        train_data['Y'].append(Y_g[:N_train[g]])
+        test_data['Y'].append(Y_g[N_train[g]:])
+        train_data['delta'].append(delta_g[:N_train[g]])
+        test_data['delta'].append(delta_g[N_train[g]:])
 
-    return X, Y, delta
+    return train_data, test_data, B
+
+
+if __name__ == "__main__":
+    G = 5
+    train_data, test_data, B = generate_simulated_data(p=20, N_train=[20]*G, N_test=[50]*G,
+                                                       B_type=1, Correlation_type="band1", seed=0)
+    X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
+    X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
+
+
+
+
+# X = []
+# Y = []
+# delta = []
+# R = []
+
+    # X.append(X_g)
+    # Y.append(Y_g)
+    # delta.append(delta_g)
+    # R.append(R_g)
 
 
 # # 模拟参数设置

@@ -142,7 +142,48 @@ def sample_labels(B, N_list, tol=1e-2):
     return np.concatenate(sample_labels)
 
 
+def evaluate_coef_test(B_hat, B, test_data):
+    # results = {}
+    X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
+    G = len(Y_test)
+    N_test = [len(Y_test[g]) for g in range(G)]
+    significance_true = variable_significance(B)  # 变量显著性
+    labels_true = sample_labels(B, N_test)  # 样本分组标签
 
+    # 变量选择评估
+    significance_pred = variable_significance(B_hat)
+    TP, FP, TN, FN = calculate_confusion_matrix(significance_true, significance_pred)
+    TPR = calculate_tpr(TP, FN)
+    FPR = calculate_fpr(FP, TN)
+
+    # 分组指标
+    labels_pred = sample_labels(B_hat, N_test)
+    RI = calculate_ri(labels_true, labels_pred)
+    ARI = calculate_ari(labels_true, labels_pred)
+    G_num = group_num(B_hat)
+
+    # 训练误差
+    sse = SSE(B_hat, B)
+
+    # 预测误差
+    c_index = [C_index(B_hat[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
+
+    results = dict(TPR=TPR,
+                   FPR=FPR,
+                   SSE=sse,
+                   C_index=np.mean(c_index),
+                   RI=RI,
+                   ARI=ARI,
+                   G=G_num)
+    return results
+
+    # results['TPR'] = TPR
+    # results['FPR'] = FPR
+    # results['SSE'] = sse
+    # results['c_index'] = np.mean(c_index)
+    # results['RI'] = RI
+    # results['ARI'] = ARI
+    # results['G'] = G_num
 
 # def calculate_ari(RI_list):
 #     mean_RI = np.mean(RI_list)

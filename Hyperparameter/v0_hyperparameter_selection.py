@@ -7,16 +7,16 @@ from matplotlib import pyplot as plt
 from Hyperparameter.hyperparameter_functions import calculate_mbic
 from comparison_method.homogeneity_model import homogeneity_model
 from comparison_method.no_tree_model import no_tree_model
-from data_generation import generate_simulated_data, true_B
+from data_generation import generate_simulated_data
 
 
-def grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=0.5, eta=0.1, method='no_tree'):
+def grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=0.5, eta=0.1, method='notree'):
     best_mbic = float('inf')
     best_params = {}
     mbic_records = {}
     B_ahead = None
 
-    if method == 'no_tree':
+    if method == 'notree':
         for lambda1 in parameter_ranges['lambda1']:
             B_hat = no_tree_model(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta, B_init=B_ahead)
             B_ahead = B_hat.copy()
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     parameter_ranges = {'lambda1': np.linspace(0.01, 0.5, 10)}
 
     B = true_B(G, p, B_type=1)
-    X, Y, delta, R = generate_simulated_data(G, p, N_class, B, method="Band1")  # 生成模拟数据
+    X, Y, delta, R = generate_simulated_data(p, N_class, N_test, B, Correlation_type="Band1")  # 生成模拟数据
 
     # 执行网格搜索
     lambda1_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, Y, R, eta=eta, method='no_tree')

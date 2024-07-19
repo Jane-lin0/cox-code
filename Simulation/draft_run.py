@@ -2,6 +2,7 @@ import time
 import numpy as np
 import concurrent.futures
 from draft_functions import simulate_and_record
+from related_functions import save_to_csv
 
 
 def run_simulations(repeats):  # [1, 2, 3, 4]   # "Band1", "Band2", "CS(0.2)", "CS(0.4)", "AR(0.3)", "AR(0.7)"
@@ -26,26 +27,20 @@ def run_simulations(repeats):  # [1, 2, 3, 4]   # "Band1", "Band2", "CS(0.2)", "
 
                 if (B_type, Correlation_type) not in results:
                     results[(B_type, Correlation_type)] = {
-                        'proposed': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
-                        'heter': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
-                        'homo': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []},
-                        'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []}
+                        'proposed': {'TPR': [], 'FPR': [], 'SSE': [], 'C_index': [], 'RI': [], 'ARI': [], 'G': []},
+                        'heter': {'TPR': [], 'FPR': [], 'SSE': [], 'C_index': [], 'RI': [], 'ARI': [], 'G': []},
+                        'homo': {'TPR': [], 'FPR': [], 'SSE': [], 'C_index': [], 'RI': [], 'ARI': [], 'G': []},
+                        'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'C_index': [], 'RI': [], 'ARI': [], 'G': []}
                     }
 
                 for method in ['proposed', 'heter', 'homo', 'no_tree']:
                     for metric in data[method]:
                         results[(B_type, Correlation_type)][method][metric].append(data[method][metric])
 
+                save_to_csv(results, filename=f"results_B{B_type}_{Correlation_type}.csv")  # 保存结果
+
             except Exception as exc:
                 print(f"{task} generated an exception: {exc}")
-
-    # 计算每个组合的平均值和标准差
-    for combination, data in results.items():
-        for method in ['proposed', 'heter', 'homo', 'no_tree']:
-            for metric in data[method]:
-                mean_value = np.mean(data[method][metric])
-                std_value = np.std(data[method][metric])
-                results[combination][method][metric] = {'mean': mean_value, 'std': std_value}
 
     return results
 
@@ -53,9 +48,9 @@ def run_simulations(repeats):  # [1, 2, 3, 4]   # "Band1", "Band2", "CS(0.2)", "
 if __name__ == "__main__":
     start_time = time.time()
 
-    repeats = 1     # 重复次数
+    repeats = 2     # 重复次数
     results = run_simulations(repeats=repeats)
-    print(results)
+    # print(results)
 
     # 计算运行时间
     running_time = time.time() - start_time

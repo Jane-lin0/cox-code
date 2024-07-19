@@ -145,7 +145,7 @@ def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=0.4, eta=0.1, a=3, ma
 
 if __name__ == "__main__":
     import time
-    from data_generation import generate_simulated_data, true_B
+    from data_generation import generate_simulated_data
     from evaluation_indicators import SSE, C_index, variable_significance, calculate_confusion_matrix, calculate_tpr, \
     calculate_fpr, calculate_ri, sample_labels, calculate_ari, group_num
     from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     p = 100  # 变量维度
     rho = 0.4
     eta = 0.2
-    N_class = np.array([200]*G)   # 每个类别的样本数量
+    N_train = np.array([200]*G)   # 每个类别的样本数量
     N_test = np.array([500] * G)
 
     Correlation_type = "Band1"  # X 的协方差形式
@@ -176,10 +176,15 @@ if __name__ == "__main__":
         'no_tree': {'TPR': [], 'FPR': [], 'SSE': [], 'c_index': [], 'RI': [], 'ARI': [], 'G': []}
     }
 
-    B = true_B(G, p, B_type=B_type)
-
-    X, Y, delta = generate_simulated_data(G, p, N_class, B, method=Correlation_type, seed=0)
-    X_test, Y_test, delta_test = generate_simulated_data(G, p, N_test, B, method=Correlation_type, seed=1)
+    # B = true_B(G, p, B_type=B_type)
+    #
+    # X, Y, delta = generate_simulated_data(p, N_class, N_test, B, Correlation_type=Correlation_type, seed=0)
+    # X_test, Y_test, delta_test = generate_simulated_data(p, N_test, N_test, B, Correlation_type=Correlation_type,
+    #                                                      seed=1)
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test,
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=0)
+    X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
+    X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
 
     # 执行网格搜索
     # lambda1_heter, lambda2_heter = grid_search_hyperparameters(parameter_ranges, X, Y, delta, method='heter', rho=rho,

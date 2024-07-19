@@ -3,8 +3,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
 
 from Simulation.single_Btype_functions import single_iteration
-from data_generation import true_B
-# from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
 
 
 if __name__ == "__main__":

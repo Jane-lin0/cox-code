@@ -43,7 +43,7 @@ def log_likelihood(beta, X_g, delta_g, R_g):
 N_class = [300]
 p = 50
 beta = np.vstack([np.random.uniform(low=-10, high=10, size=p), np.zeros(p)])
-X_g, delta_g, R_g = generate_simulated_data(1, p, N_class, beta, method="AR(0.3)")
+X_g, delta_g, R_g = generate_simulated_data(p, N_class, N_test, beta, Correlation_type="AR(0.3)")
 X_g, delta_g, R_g = X_g[0], delta_g[0], R_g[0]
 
 beta1 = np.random.randn(X_g.shape[1])

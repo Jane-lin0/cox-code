@@ -84,9 +84,13 @@ if __name__ == "__main__":
     G = 5  # 类别数
     p = 50  # 变量维度
     np.random.seed(1900)
-    N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
-    B = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]), (G, 1))   # lambda1=0.1
-    X, Y, delta, R = generate_simulated_data(G, p, N_class, B, )
+    N_train = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
+    # B = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]), (G, 1))   # lambda1=0.1
+    # X, Y, delta, R = generate_simulated_data(p, N_class, N_test, B, )
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test=[50]*G,
+                                                       B_type=1, Correlation_type="band1", seed=0)
+    X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
+    X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
 
     B_initial = initial_value_B(X, Y, delta, lambda1=0.1)
     SSE = SSE(B_initial, B)

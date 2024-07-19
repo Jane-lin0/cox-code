@@ -1,15 +1,17 @@
+import time
+
 import numpy as np
 
-from data_generation import get_R_matrix, generate_simulated_data, true_B
+from data_generation import get_R_matrix, generate_simulated_data
 from related_functions import define_tree_structure, compute_Delta, internal_nodes, all_descendants, \
     group_soft_threshold, gradient_descent_adam, get_coef_estimation, refit, get_D, get_gamma
 
 
-def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_iter_m=200, max_iter_l=50, tolerance_l=1e-4,
-                  delta_primal=5e-5, delta_dual=5e-5, B_init=None):
+def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, tree_structure="G5", a=3, max_iter_m=200,
+                  max_iter_l=50, tolerance_l=1e-4, delta_primal=5e-5, delta_dual=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
-    tree = define_tree_structure(tree_structure="empirical")
+    tree = define_tree_structure(tree_structure=tree_structure)  # tree_structure="empirical"
     K = G + len(internal_nodes(tree))
     N = np.sum([len(X[g]) for g in range(G)])
     R = [get_R_matrix(Y[g]) for g in range(G)]
@@ -26,8 +28,7 @@ def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_iter_m
     U1 = np.zeros((G, p))
     U2 = np.zeros((G, p))
     W1 = np.zeros((K, p))
-    # 根据树结构设定 D
-    D = get_D(tree)   # beta1 = gamma1 + gamma6 + gamma8
+    D = get_D(tree)   # B = D * Gamma， beta1 = gamma1 + gamma6 + gamma8
     D_tilde = np.vstack([D, np.eye(K)])  # D 为二元矩阵，np.eye(K) 是 K 维单位矩阵
     D_c = np.linalg.inv(D_tilde.T @ D_tilde) @ D_tilde.T
 
@@ -136,15 +137,23 @@ def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, a=3, max_iter_m
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     # 生成模拟数据
     G = 36  # 类别数
     p = 100  # 变量维度
-    N_class = np.array([200]*G)
-    B = true_B(G, p, B_type=1)
-    X, Y, delta = generate_simulated_data(G, p, N_class, B, method="Band1", seed=12)
+    N_train = np.array([200]*G)
+    # B = true_B(G, p, B_type=1)
+    # X, Y, delta = generate_simulated_data(p, N_class, N_test, B, Correlation_type="Band1", seed=12)
 
-    B_hat = ADMM_optimize(X, Y, delta, lambda1=0.3, lambda2=0.05, rho=1, eta=0.2, a=3,
-                          delta_primal=5e-5, delta_dual=5e-5)
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test=[0]*G,
+                                                       B_type=1, Correlation_type="band1", seed=0)
+    X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
+    # X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
+
+    B_hat = ADMM_optimize(X, Y, delta, lambda1=0.3, lambda2=0.05, rho=1, eta=0.2, a=3, delta_primal=5e-5,
+                          delta_dual=5e-5)
+
+    print(f"running time {(time.time() - start_time)/60} minutes")
 
 
 

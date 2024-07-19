@@ -80,7 +80,7 @@ def no_tree_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=100, L=30, tolera
     return B_hat
 
 if __name__ == "__main__":
-    from data_generation import generate_simulated_data, true_B
+    from data_generation import generate_simulated_data
     from evaluation_indicators import SSE, C_index
     from Hyperparameter.v0_hyperparameter_selection import grid_search_hyperparameters_v0
 
@@ -94,14 +94,19 @@ if __name__ == "__main__":
     # L = 50
     # delta_dual = 5e-5
 
-    N_class = np.array([200] * G)   # 每个类别的样本数量
+    N_train = np.array([200] * G)   # 每个类别的样本数量
     N_test = np.array([2000] * G)
-    data_type = "Band1"  # X 的协方差形式
+    Correlation_type = "Band1"  # X 的协方差形式
     B_type = 1
 
-    B = true_B(G, p, B_type=B_type)
-    X, Y, delta = generate_simulated_data(G, p, N_class, B, method=data_type, seed=True)
-    X_test, Y_test, delta_test = generate_simulated_data(G, p, N_test, B, method=data_type)
+    # B = true_B(G, p, B_type=B_type)
+    # X, Y, delta = generate_simulated_data(p, N_class, N_test, B, Correlation_type=data_type, seed=True)
+    # X_test, Y_test, delta_test = generate_simulated_data(p, N_test, N_test, B, Correlation_type=data_type)
+
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test,
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=0)
+    X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
+    X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
 
     # lambda1 = 0.1
     parameter_ranges = {'lambda1': np.linspace(0.05, 0.2, 4)}

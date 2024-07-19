@@ -1,8 +1,10 @@
+import os
 import pickle
 import sys
 import warnings
 import numpy as np
 import networkx as nx
+import pandas as pd
 from sksurv.linear_model import CoxPHSurvivalAnalysis
 
 from data_generation import get_R_matrix
@@ -412,6 +414,26 @@ def get_coef_estimation(B3, Gamma1, D):
     return B_hat
 
 
+def get_mean_std(results):
+    # 计算每个组合的平均值和标准差
+    for key, methods in results.items():
+        for method, metrics in methods.items():
+            for metric, values in metrics.items():
+                mean_value = np.mean(values)
+                std_value = np.std(values)
+                results[key][method][metric] = {'mean': mean_value, 'std': std_value}
+    return results
+
+    # elif script == "draft_run":
+    #     # 计算每个组合的平均值和标准差
+    #     for combination, data in results.items():
+    #         for method in ['proposed', 'heter', 'homo', 'no_tree']:
+    #             for metric in data[method]:
+    #                 mean_value = np.mean(data[method][metric])
+    #                 std_value = np.std(data[method][metric])
+    #                 results[combination][method][metric] = {'mean': mean_value, 'std': std_value}
+
+
 def generate_latex_table(results):
     table_header = r"""
     \begin{table}[htbp]
@@ -445,7 +467,7 @@ def generate_latex_table(results):
             else:
                 row.append(" &  & Notree")
 
-            for metric in ['TPR', 'FPR', 'SSE', 'c_index', 'RI', 'ARI', 'G']:
+            for metric in ['TPR', 'FPR', 'SSE', 'C_index', 'RI', 'ARI', 'G']:
                 mean = result[method][metric]['mean']
                 std = result[method][metric]['std']
                 row.append(f"{mean:.2f} ({std:.2f})")
@@ -490,6 +512,34 @@ def generate_latex_table0(results):
 
     return table
 
+
+# 保存结果到 CSV 文件
+def save_to_csv(data, filename='results.csv'):
+    records = []
+    for (k1, k2), methods in data.items():    # 将字典转换为 DataFrame
+        for method, metrics in methods.items():
+            record = {'Key1': k1, 'Key2': k2, 'Method': method}
+            record.update(metrics)
+            records.append(record)
+    df = pd.DataFrame(records)
+    df.to_csv(filename, index=False)
+
+
+# 从 CSV 文件加载结果
+def load_from_csv(filename='results.csv'):
+    if not os.path.exists(filename):
+        return {}
+    df = pd.read_csv(filename)
+    results = {}
+    for _, row in df.iterrows():
+        key = (row['Key1'], row['Key2'])
+        method = row['Method']
+        metrics = row.drop(['Key1', 'Key2', 'Method']).to_dict()
+        if key not in results:
+            results[key] = {}
+        results[key][method] = metrics
+    return results
+# results = load_from_csv()
 
 
 # def get_S_hat(B):
