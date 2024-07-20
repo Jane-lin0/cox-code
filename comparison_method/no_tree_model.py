@@ -4,7 +4,7 @@ from related_functions import group_soft_threshold, gradient_descent_adam_initia
 from data_generation import get_R_matrix
 
 
-def beta_estimation(X_g, Y_g, delta_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_m=1e-5,
+def beta_estimation(X_g, Y_g, delta_g, lambda1, rho=1, eta=0.1, a=3, M=300, L=100, tolerance_l=1e-4, delta_m=1e-5,
                     beta_init=None):
     p = X_g.shape[1]
     # 初始化变量
@@ -52,17 +52,18 @@ def beta_estimation(X_g, Y_g, delta_g, lambda1, rho=1, eta=0.1, a=3, M=200, L=50
         # 检查收敛条件
         if (np.linalg.norm(beta1 - beta1_old)**2 < delta_m and
             np.linalg.norm(beta3 - beta3_old)**2 < delta_m):
-            print(f"Iteration m={m}: NO tree model convergence ")
+            print(f"Iteration m={m}: NOtree model convergence ")
             break
 
-    beta_hat = (beta1 + beta3) / 2
+    # beta_hat = (beta1 + beta3) / 2
+    beta_hat = beta1.copy()
     for i in range(len(beta_hat)):
         if beta3[i] == 0:
             beta_hat[i] = 0
     return beta_hat
 
 
-def no_tree_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=100, L=30, tolerance_l=5e-4, delta_dual=1e-4,
+def no_tree_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=300, L=100, tolerance_l=1e-4, delta_dual=5e-5,
                   B_init=None):
     G = len(X)
     p = X[0].shape[1]
@@ -73,11 +74,13 @@ def no_tree_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=100, L=30, tolera
         else:
             beta_init = B_init[g]
 
-        B_hat[g] = beta_estimation(X[g], Y[g], delta[g], lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L,
+        beta = beta_estimation(X[g], Y[g], delta[g], lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L,
                                    tolerance_l=tolerance_l, delta_m=delta_dual, beta_init=beta_init)
+        B_hat[g] = beta.copy()
     # B_refit = refit(X, Y, delta, B_hat)
     # return B_refit
     return B_hat
+
 
 if __name__ == "__main__":
     from data_generation import generate_simulated_data

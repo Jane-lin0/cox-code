@@ -165,7 +165,7 @@ def Delta_J(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho, epsilon=1e-5
 def Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho):
     # 计算梯度的函数
     n = X_g.shape[0]
-    check_nan_inf(beta, 'beta')
+    # check_nan_inf(beta, 'beta')
     # X_beta = np.clip(X_g @ beta, -500, 500)
     r_exp_x_beta = R_g @ np.exp(X_g @ beta)   # + 1e-8 防止除0
     if np.any(r_exp_x_beta == 0):
@@ -191,13 +191,6 @@ def gradient_descent_adam(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho,
     for i in range(max_iter):
         beta_old = beta.copy()
         gradient = Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho)
-
-        # # 裁剪梯度
-        # clip_value = 1
-        # gradient_norm = np.linalg.norm(gradient)
-        # if gradient_norm > clip_value:
-        #     gradient = gradient * (clip_value / gradient_norm)
-        #     # print("gradient cliped ")
 
         # 更新一阶矩估计和二阶矩估计
         m = a1 * m + (1 - a1) * gradient
@@ -294,7 +287,7 @@ def group_soft_threshold(x, lambd):
     else:
         norm_x = np.linalg.norm(x)
         # norm_x = np.linalg.norm(x, 2)  # 不适合 matrix
-        shrinkage_factor = max(1 - lambd / norm_x, 0)   # if norm_x != 0 else 0
+        shrinkage_factor = max(1 - lambd / norm_x, 0)
         return shrinkage_factor * x
 
 

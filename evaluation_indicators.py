@@ -171,7 +171,7 @@ def evaluate_coef_test(B_hat, B, test_data):
     results = dict(TPR=TPR,
                    FPR=FPR,
                    SSE=sse,
-                   C_index=np.mean(c_index),
+                   Cindex=np.mean(c_index),
                    RI=RI,
                    ARI=ARI,
                    G=G_num)
