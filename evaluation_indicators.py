@@ -90,7 +90,7 @@ def calculate_ari(labels_true, labels_pred):
     return ari
 
 
-def group_num(B, tol=1e-2):      # 类似 unique，但是是合并相似而不是完全相同的行向量
+def group_num(B, tol=5e-2):      # 类似 unique，但是是合并相似而不是完全相同的行向量
     # 计算所有行向量之间的欧氏距离
     dists = pdist(B, metric='euclidean')
     # dist_matrix[i,j] = 第 i 行 和 第 j 行 的距离

@@ -3,11 +3,12 @@ import time
 import numpy as np
 
 from data_generation import get_R_matrix, generate_simulated_data
+from evaluation_indicators import evaluate_coef_test
 from related_functions import define_tree_structure, compute_Delta, internal_nodes, all_descendants, \
     group_soft_threshold, gradient_descent_adam, get_coef_estimation, refit, get_D, get_gamma
 
 
-def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, tree_structure="G5", a=3, max_iter_m=300,
+def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, tree_structure="G5", a=3, max_iter_m=400,
                   max_iter_l=100, tolerance_l=1e-4, delta_primal=5e-5, delta_dual=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
@@ -137,21 +138,28 @@ def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, tree_structure=
 
 
 if __name__ == "__main__":
+    from Hyperparameter.v1_hyperparameter_selection import grid_search_hyperparameters_v1
+
     start_time = time.time()
     # 生成模拟数据
-    G = 36  # 类别数
+    G = 16  # 类别数
     p = 100  # 变量维度
     N_train = np.array([200]*G)
-    # B = true_B(G, p, B_type=1)
-    # X, Y, delta = generate_simulated_data(p, N_class, N_test, B, Correlation_type="Band1", seed=12)
+    N_test = np.array([500] * G)
+    B_type = 1
+    Correlation_type = "band1"
 
-    train_data, test_data, B = generate_simulated_data(p, N_train, N_test=[0]*G,
-                                                       B_type=1, Correlation_type="band1", seed=0)
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test=N_test,
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=0)
     X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
-    # X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
 
-    B_hat = ADMM_optimize(X, Y, delta, lambda1=0.3, lambda2=0.05, rho=1, eta=0.2, a=3, delta_primal=5e-5,
-                          delta_dual=5e-5)
+    # parameter_ranges = {'lambda1': np.linspace(0.05, 0.3, 3),
+    #                     'lambda2': np.linspace(0.05, 0.4, 4)}
+    # lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
+    #                                                                  rho=1, eta=0.2, method='proposed')
+    B_proposed = ADMM_optimize(X, Y, delta, lambda1=0.3, lambda2=0.05, rho=1, eta=0.2, a=3, tree_structure="G16")
+    results = evaluate_coef_test(B_proposed, B, test_data)
+    print(results)
 
     print(f"running time {(time.time() - start_time)/60} minutes")
 

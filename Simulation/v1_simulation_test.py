@@ -12,7 +12,7 @@ from data_generation import generate_simulated_data
 from evaluation_indicators import SSE, C_index, variable_significance, calculate_confusion_matrix, calculate_tpr, \
     calculate_fpr, calculate_ri, group_num, sample_labels, calculate_ari, evaluate_coef_test
 from main_ADMM import ADMM_optimize
-from related_functions import get_mean_std, generate_latex_table
+from related_functions import get_mean_std, generate_latex_table, generate_latex_table1
 
 '''  
 4 种方法 + 7个评估指标 （无并行运算）
@@ -43,17 +43,17 @@ for i in range(1):
     parameter_ranges = {'lambda1': np.linspace(0.05, 0.3, 3),
                         'lambda2': np.linspace(0.05, 0.4, 4)}
 
-    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
-                                                                     rho=rho, eta=eta, method='proposed')
-    lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
-                                                               rho=0.3, eta=eta, method='heter')
+    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, "G5",
+                                                                                    rho=rho, eta=eta, method='proposed')
+    lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, "G5", rho=0.3,
+                                                                           eta=eta, method='heter')
     lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
                                                               method='notree')
     lambda1_homo, B_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
                                                           method='homo')
 
     # NO tree method
-    results[key]['no_tree'] = evaluate_coef_test(B_notree, B, test_data)
+    results[key]['notree'] = evaluate_coef_test(B_notree, B, test_data)
 
     # Proposed method
     results[key]['proposed'] = evaluate_coef_test(B_proposed, B, test_data)
@@ -64,8 +64,9 @@ for i in range(1):
     # homo method
     results[key]['homo'] = evaluate_coef_test(B_homo, B, test_data)
 
+print(results)
 res = get_mean_std(results)
-latex = generate_latex_table(res)
+latex = generate_latex_table1(res)
 print(latex)
 
 running_time = time.time() - start_time

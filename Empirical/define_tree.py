@@ -10,7 +10,7 @@ df_full = pd.read_excel(r"state_added.xlsx")
 region_state_counts = pd.read_excel(r"region_state_counts.xlsx")
 
 # 计算样本数的分位数
-quantile = region_state_counts['sample_count'].quantile(0.7)  # 0.75(G=13)，0.7(G=16)
+quantile = region_state_counts['sample_count'].quantile(0.8)  #0.8(G=11) 0.75(G=13)，0.7(G=16)
 # 过滤掉样本数小于分位数的行
 filtered_counts = region_state_counts[region_state_counts['sample_count'] >= quantile]
 
@@ -86,11 +86,10 @@ if 'US' in internal_nodes:
 max_value = max(node_to_index.values())
 for node in internal_nodes:
     max_value += 1
-    node_to_index[node] = max_value
+    node_to_index[node] = max_value  # 添加非叶节点
 
 # 复制原树结构
 tree_index = tree.copy()
-
 # 重命名节点为索引
 tree_index = nx.relabel_nodes(tree_index, node_to_index)
 
@@ -106,7 +105,8 @@ print_index_tree(tree_index, node_to_index["US"])
 # 调试输出
 print("Index tree edges:", tree_index.edges())
 
-with open("tree_index.pkl", "wb") as f:
+G = len([node for node in tree_index.nodes() if tree_index.out_degree(node) == 0])
+with open(f"tree_index_G{G}.pkl", "wb") as f:
     pickle.dump(tree_index, f)
 
 print(f"Running time: {(time.time() - start_time)/60} minutes")

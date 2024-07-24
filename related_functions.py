@@ -1,3 +1,4 @@
+import ast
 import os
 import pickle
 import sys
@@ -221,7 +222,8 @@ def gradient_descent_adam_homo(beta, X, delta, R, beta3, u2, rho, eta=0.1, max_i
         for g in range(len(X)):   # 分组加总 gradient
             n_g = X[g].shape[0]
             gradient += (- np.dot(X[g].T, delta[g]) + np.dot(X[g].T @ np.diag(np.exp(np.dot(X[g], beta))), R[g].T).dot(
-                np.diag(1 / (R[g].dot(np.exp(np.dot(X[g], beta)))))).dot(delta[g]))/n_g - rho * (beta3 - beta + u2)
+                np.diag(1 / (R[g].dot(np.exp(np.dot(X[g], beta)))))).dot(delta[g]))/n_g
+            gradient -= rho * (beta3 - beta + u2)
 
         # 更新一阶矩估计和二阶矩估计
         m = a1 * m + (1 - a1) * gradient
@@ -313,6 +315,10 @@ def compute_Delta(X2, X1, is_relative=True):
 def define_tree_structure(tree_structure="G5"):
     # 创建一个空的有向图
     tree = nx.DiGraph()
+    # 找到当前文件所在的目录
+    current_dir = os.path.dirname(__file__)
+    # 构建相对路径到 cox_code
+    project_root = os.path.join(current_dir, os.pardir)
     if tree_structure == "G5":
         # 添加节点
         tree.add_nodes_from(range(8))  # 假设有 K 个节点
@@ -324,10 +330,18 @@ def define_tree_structure(tree_structure="G5"):
                     #    5      6
                     #  / | \   / \
                     # 0  1  2  3  4
-    elif tree_structure == "empirical":
-        with open(r"C:\Users\janline\Desktop\毕业论文\cox_code\Empirical\tree_index.pkl", "rb") as f:
+    elif tree_structure == "G36":
+        file_path = os.path.join(project_root, 'cox_code', 'Empirical', 'tree_index.pkl')
+        with open(file_path, "rb") as f:
             tree = pickle.load(f)
-
+    elif tree_structure == "G16":
+        file_path = os.path.join(project_root, 'cox_code', 'Empirical', 'tree_index_G16.pkl')
+        with open(file_path, "rb") as f:
+            tree = pickle.load(f)
+    elif tree_structure == "G11":
+        file_path = os.path.join(project_root, 'cox_code', 'Empirical', 'tree_index_G11.pkl')
+        with open(file_path, "rb") as f:
+            tree = pickle.load(f)
     return tree
 
 
@@ -412,6 +426,8 @@ def get_mean_std(results):
     for key, methods in results.items():
         for method, metrics in methods.items():
             for metric, values in metrics.items():
+                if isinstance(values, str):
+                    values = ast.literal_eval(values)
                 mean_value = np.mean(values)
                 std_value = np.std(values)
                 results[key][method][metric] = {'mean': mean_value, 'std': std_value}
@@ -431,7 +447,7 @@ def generate_latex_table(results):
     table_header = r"""
     \begin{table}[htbp]
     \centering
-    \caption{模拟结果（每个单元格是10次重复的平均值（标准差）}
+    \caption{模拟结果（每个单元格是1次重复的平均值（标准差）}
     \label{table:simulation_result}
     \scalebox{0.75}{
     \begin{tabular}{c c c   c c   c c   c c c}
@@ -449,7 +465,7 @@ def generate_latex_table(results):
     rows = []
 
     for (example, correlation), result in results.items():
-        for method in ['proposed', 'heter', 'homo', 'no_tree']:
+        for method in ['proposed', 'heter', 'homo', 'notree']:
             row = []
             if method == 'proposed':
                 row.append(f"\\multirow{{4}}{{*}}{{{example}}} & \\multirow{{4}}{{*}}{{{correlation}}} & Proposed")
@@ -466,6 +482,57 @@ def generate_latex_table(results):
                 row.append(f"{mean:.2f} ({std:.2f})")
 
             rows.append(" & ".join(row) + r" \\")
+
+    table_body = "\n".join(rows)
+    return table_header + table_body + table_footer
+
+
+def generate_latex_table1(results):
+    table_header = r"""
+        \begin{table}[htbp]
+        \centering
+        \caption{模拟结果（每个单元格是1次重复的平均值（标准差）}
+        \label{table:simulation_result}
+        \scalebox{0.9}{
+        \begin{tabular}{c c c   c c   c c   c c c}
+        \hline
+        Example & Correlation & Method & TPR  & FPR & SSE  & C-index & RI  & ARI & G \\
+        \hline
+                        """
+
+    table_footer = r"""
+        \hline
+        \end{tabular}}
+        \end{table}
+                        """
+
+    rows = []
+
+    for (example, correlation), result in results.items():
+        for method in ['proposed', 'heter', 'homo', 'notree']:
+            mean_row = []
+            std_row = []
+            if method == 'proposed':
+                mean_row.append(f"\\multirow{{8}}{{*}}{{{example}}} & \\multirow{{8}}{{*}}{{{correlation}}} & Proposed")
+                std_row.append(" &  & ")
+            elif method == 'heter':
+                mean_row.append(f" &  & Heter")
+                std_row.append(" &  & ")
+            elif method == 'homo':
+                mean_row.append(f" &  & Homo")
+                std_row.append(" &  & ")
+            else:
+                mean_row.append(" &  & Notree")
+                std_row.append(" &  & ")
+
+            for metric in ['TPR', 'FPR', 'SSE', 'Cindex', 'RI', 'ARI', 'G']:
+                mean = result[method][metric]['mean']
+                std = result[method][metric]['std']
+                mean_row.append(f"{mean:.2f}")
+                std_row.append(f"({std:.2f})")
+
+            rows.append(" & ".join(mean_row) + r" \\")
+            rows.append(" & ".join(std_row) + r" \\")
 
     table_body = "\n".join(rows)
     return table_header + table_body + table_footer

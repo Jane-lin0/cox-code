@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 
 from Hyperparameter.hyperparameter_functions import calculate_mbic
-from Hyperparameter.hyperparameter_selection import grid_search_hyperparameters
 from comparison_method.heterogeneity_model import heterogeneity_model
 from data_generation import generate_simulated_data
 from main_ADMM import ADMM_optimize
@@ -16,7 +15,7 @@ from main_ADMM import ADMM_optimize
 将前一组的超参数选择结果（B_hat）设为下一组的初值'''
 
 
-def grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, rho=0.5, eta=0.1, method='proposed'):
+def grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, tree_structure, rho=0.5, eta=0.1, method='proposed'):
     best_mbic = float('inf')
     best_params = {}
     mbic_records = {}
@@ -25,11 +24,12 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, rho=0.5, eta=0
     if method == 'proposed':
         for lambda1 in parameter_ranges['lambda1']:
             for lambda2 in parameter_ranges['lambda2']:
-                B_hat = ADMM_optimize(X, Y, delta, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta, B_init=B_ahead)
+                B_hat = ADMM_optimize(X, Y, delta, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta, B_init=B_ahead,
+                                      tree_structure=tree_structure)
                 B_ahead = B_hat.copy()
                 mbic = calculate_mbic(B_hat, X, Y, delta)
                 # 记录每个 lambda1, lambda2 对应的 mbic
-                mbic_records[(lambda1, lambda2)] = mbic
+                # mbic_records[(lambda1, lambda2)] = mbic
                 # 检查是否找到了更好的参数
                 if mbic < best_mbic:
                     best_mbic = mbic
@@ -39,10 +39,11 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, rho=0.5, eta=0
     elif method == 'heter':
         for lambda1 in parameter_ranges['lambda1']:
             for lambda2 in parameter_ranges['lambda2']:
+                lambda2 = lambda2 * 4
                 B_hat = heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=rho, eta=eta, B_init=B_ahead)
                 B_ahead = B_hat.copy()
                 mbic = calculate_mbic(B_hat, X, Y, delta)
-                mbic_records[(lambda1, lambda2)] = mbic
+                # mbic_records[(lambda1, lambda2)] = mbic
                 # 检查是否找到了更好的参数
                 if mbic < best_mbic:
                     best_mbic = mbic
@@ -106,10 +107,10 @@ if __name__ == "__main__":
     parameter_ranges = {'lambda1': np.linspace(0.01, 0.3, 3),
                         'lambda2': np.linspace(0.01, 0.3, 3)}
     # 执行网格搜索
-    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
+    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, "G5",
                                                                                     rho=rho, eta=eta, method='proposed')
 
-    lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, rho=rho,
+    lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, "G5", rho=rho,
                                                                            eta=eta, method='heter')
 
     # 计算运行时间

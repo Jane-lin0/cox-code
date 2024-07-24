@@ -93,7 +93,7 @@ def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=0.5, eta=0.3, a=3, ma
                 # B1[g] = B1[g] - eta * Delta_J(B1[g], B2[g], B3[g], U1[g], U2[g], X[g], delta[g], R[g], N, rho)
             diff = compute_Delta(B1, B1_l_old, is_relative=False)
             if diff < tolerance_l:
-                print(f"l={l}: B1 update")
+                # print(f"l={l}: B1 update")
                 break
 
         # 更新 B3
@@ -170,6 +170,8 @@ def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=0.5, eta=0.3, a=3, ma
 
 if __name__ == "__main__":
     import time
+    from scipy.spatial.distance import pdist, squareform
+
     from data_generation import generate_simulated_data
     from evaluation_indicators import evaluate_coef_test
     from Hyperparameter.v1_hyperparameter_selection import grid_search_hyperparameters_v1
@@ -186,11 +188,6 @@ if __name__ == "__main__":
     Correlation_type = "Band1"  # X 的协方差形式
     B_type = 1
 
-    parameter_ranges = {
-        'lambda1': np.linspace(0.05, 0.3, 3),
-        'lambda2': np.linspace(0.05, 0.4, 4)
-    }
-
     results = {}
     key = (B_type, Correlation_type)
     results[key] = {}
@@ -199,8 +196,12 @@ if __name__ == "__main__":
                                                        B_type=B_type, Correlation_type=Correlation_type, seed=0)
     X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
 
-    # lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
-    #                                                            rho=0.5, eta=0.2, method='heter')
+    # parameter_ranges = {
+    #     'lambda1': np.linspace(0.05, 0.3, 3),
+    #     'lambda2': np.linspace(0.05, 0.4, 4)
+    # }
+    # lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, "G5", rho=0.5,
+    #                                                                        eta=0.2, method='heter')
     # lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=1, eta=0.2,
     #                                                           method='notree')
     lambda1_heter, lambda2_heter = 0.3, 0.15
@@ -213,10 +214,12 @@ if __name__ == "__main__":
     results[key]['heter'] = evaluate_coef_test(B_heter, B, test_data)
     results[key]['notree'] = evaluate_coef_test(B_notree, B, test_data)
 
+    dists = pdist(B_heter, metric='euclidean')
+    # dist_matrix[i,j] = 第 i 行 和 第 j 行 的距离
+    dist_matrix = squareform(dists)
+
     print(f"heter method running time:{(time.time() - start_time)/60} minutes")
 
-    # res = get_mean_std(results)
-    # latex = generate_latex_table(res)
     print(results)
 
 
