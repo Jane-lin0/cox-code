@@ -6,7 +6,8 @@ import pgeocode
 start_time = time.time()
 
 # 读取数据文件
-file_path = r"historical_data_2023Q1.txt"
+# file_path = r"historical_data_2023Q1.txt"  # (185937, 32)
+file_path = r"sample_orig_2023.txt"  # (37500, 32)
 
 # 使用read_csv读取数据，并指定分隔符为管道符
 df = pd.read_csv(file_path, sep='|', header=None)
@@ -65,6 +66,7 @@ for prefix in unique_prefixes:
 df_location = pd.DataFrame(location_info)
 # 添加zipcode_prefix列
 df_location['zipcode_prefix'] = df_location['postal_code'].map(postalCode_dict)
+print(f"zipcode checking finished")
 
 # 定义地区和州的映射
 regions = {
@@ -86,7 +88,7 @@ for region, states in regions.items():
         state_to_region[state] = region
 df_location['region'] = df_location['state_code'].map(state_to_region)
 df_location.to_excel(r'postalCode_location.xlsx', index=False)
-
+print("postalCode location saved ")
 
 # 将查询结果与原数据合并
 df = df.merge(df_location[['zipcode_prefix', 'region', 'state_code']],
@@ -98,6 +100,6 @@ df.to_excel(r'state_added.xlsx', index=False)
 region_state_counts = df.groupby(['region', 'state_code']).size().reset_index(name='sample_count')
 region_state_counts.to_excel(r'region_state_counts.xlsx', index=False)
 
-print('file saved')
+print('file with region and state saved')
 
 print(f"running time: {(time.time() - start_time)/60} minutes")

@@ -7,6 +7,7 @@ import seaborn as sns
 
 from Hyperparameter.hyperparameter_functions import calculate_mbic
 from comparison_method.heterogeneity_model import heterogeneity_model
+from comparison_method.no_tree_model import no_tree_model
 from data_generation import generate_simulated_data
 from main_ADMM import ADMM_optimize
 
@@ -18,15 +19,15 @@ from main_ADMM import ADMM_optimize
 def grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, tree_structure, rho=0.5, eta=0.1, method='proposed'):
     best_mbic = float('inf')
     best_params = {}
-    mbic_records = {}
-    B_ahead = None
+    # mbic_records = {}
+    B_init = no_tree_model(X, Y, delta, lambda1=0.2, rho=rho, eta=eta)  # 初始值
 
     if method == 'proposed':
         for lambda1 in parameter_ranges['lambda1']:
             for lambda2 in parameter_ranges['lambda2']:
-                B_hat = ADMM_optimize(X, Y, delta, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta, B_init=B_ahead,
+                B_hat = ADMM_optimize(X, Y, delta, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta, B_init=B_init,
                                       tree_structure=tree_structure)
-                B_ahead = B_hat.copy()
+                B_init = B_hat.copy()
                 mbic = calculate_mbic(B_hat, X, Y, delta)
                 # 记录每个 lambda1, lambda2 对应的 mbic
                 # mbic_records[(lambda1, lambda2)] = mbic
@@ -39,16 +40,17 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, tree_structure
     elif method == 'heter':
         for lambda1 in parameter_ranges['lambda1']:
             for lambda2 in parameter_ranges['lambda2']:
-                lambda2 = lambda2 * 4
-                B_hat = heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=rho, eta=eta, B_init=B_ahead)
-                B_ahead = B_hat.copy()
+                # lambda2 = lambda2 * 0.7    # 1.5
+                B_hat = heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=rho, eta=eta, B_init=B_init)
+                B_init = B_hat.copy()
                 mbic = calculate_mbic(B_hat, X, Y, delta)
                 # mbic_records[(lambda1, lambda2)] = mbic
                 # 检查是否找到了更好的参数
                 if mbic < best_mbic:
                     best_mbic = mbic
                     best_params = {'lambda1': lambda1, 'lambda2': lambda2, 'mbic': best_mbic}
-                    B_best = B_hat.copy()
+                    # B_best = B_hat.copy()
+        B_best = heterogeneity_model(X, Y, delta, best_params['lambda1'], best_params['lambda2'], rho=rho, eta=eta)
 
     # hyperparameter_figure_v1(mbic_records, best_params)
     print(f"method={method}, best params={best_params}")

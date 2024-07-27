@@ -21,12 +21,13 @@ def calculate_mbic(B, X, Y, delta):
     # 计算mBIC
     B_unique = np.unique(B, axis=0)   # 删除重复行
     params_num = parameters_num(B_unique)
-    penalty_term = params_num * 2
+    penalty_term = params_num * np.log(N)     # 0.495
     mbic = (- log_likelihood + penalty_term) / N
     return mbic
 
     #     penalty_term = scale_factor * len(B_unique) * np.log(np.log(params_num)) * np.log(N)
     #     penalty_term = scale_factor * len(B_unique) * np.log(np.log(N + params_num)) * np.log(N)
+    #     penalty_term = params_num * np.log(N)
     #     penalty_term = params_num * 2
 
 

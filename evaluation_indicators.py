@@ -2,7 +2,6 @@ import numpy as np
 from scipy.spatial.distance import pdist, squareform
 from sklearn.metrics import adjusted_rand_score, rand_score
 
-# from related_functions import internal_nodes, all_descendants, leaf_nodes, children, leaf_parents
 
 """ variable selection evaluation """
 
@@ -63,9 +62,10 @@ def C_index0(risk_ord, delta_ord, Y_ord):
     return cnt2 / cnt1
 
 
-def C_index(beta, X_ord, delta_ord, Y_ord):
+def C_index(beta, X_ord, delta_ord, Y_ord, epsilon=1e-10):
     n = X_ord.shape[0]
     risk = np.dot(X_ord, beta)  # 计算风险评分
+    risk += np.random.uniform(-epsilon, epsilon, size=risk.shape)  # 添加小随机噪声，避免 beta=0 时 c index = 1
     cnt1 = 0  # total pairs
     cnt2 = 0  # concordant pair
 

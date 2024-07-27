@@ -57,7 +57,7 @@ def beta_estimation(X_g, Y_g, delta_g, lambda1, rho=1, eta=0.1, a=3, M=300, L=10
 
         # 检查收敛条件
         if max(epsilons_dual) < delta_dual and epsilon_primal < delta_primal:
-            # print(f"Iteration m={m}: NOtree model convergence ")
+            # print(f"Iteration m={m}: NOtree model convergence ")   # 打印 G 次
             break
 
     # beta_hat = (beta1 + beta3) / 2
@@ -95,28 +95,35 @@ if __name__ == "__main__":
 
     start_time = time.time()
     # 生成模拟数据
-    G = 16  # 类别数
-    p = 100  # 变量维度
+    G = 5  # 类别数
+    p = 200  # 变量维度
     rho = 1
     eta = 0.2
 
-    N_train = np.array([200] * G)   # 每个类别的样本数量
+    N_train = np.array([100] * G)   # 每个类别的样本数量
     N_test = np.array([500] * G)
     Correlation_type = "Band1"  # X 的协方差形式
     B_type = 1
 
-    train_data, test_data, B = generate_simulated_data(p, N_train, N_test,
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=0.3,
                                                        B_type=B_type, Correlation_type=Correlation_type, seed=0)
     X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
+    if True:
+        parameter_ranges = {'lambda2': np.linspace(0.01, 0.4, 5)}
+        lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta,
+                                                                  rho=rho, eta=eta, method='notree')
+        print(f"Best tunings: {lambda1_notree}")
+        # lambda1_notree = 0.22, 0.175, 0.2
+    else:
+        lambda1_notree = 0.17
+        B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
 
-    # parameter_ranges = {'lambda1': np.linspace(0.05, 0.2, 4)}
-    # lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, eta=eta, method='no_tree')
-    # print(f"Best tunings: {lambda1_notree}")
-
-    lambda1_notree = 0.17
-    B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
-
-    results = evaluate_coef_test(B_notree, B, test_data)
+    # B_refit = refit(X, Y, delta, B_notree)
+    # B_n = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
+    results = {}
+    results['notree'] = evaluate_coef_test(B_notree, B, test_data)
+    # results['refit'] = evaluate_coef_test(B_refit, B, test_data)
+    # results['solo'] = evaluate_coef_test(B_n, B, test_data)
     print(results)
 
     print(f"notree running time: {(time.time() - start_time)/60} minutes")

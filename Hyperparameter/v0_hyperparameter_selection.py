@@ -10,16 +10,18 @@ from comparison_method.no_tree_model import no_tree_model
 from data_generation import generate_simulated_data
 
 
-def grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=0.5, eta=0.1, method='notree'):
+def grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho, eta, method):
     best_mbic = float('inf')
     best_params = {}
-    mbic_records = {}
-    B_ahead = None
+    # mbic_records = {}
+    B_init = no_tree_model(X, Y, delta, lambda1=0.2, rho=rho, eta=eta)   # 初始值
+    # B_init = None
 
     if method == 'notree':
-        for lambda1 in parameter_ranges['lambda1']:
-            B_hat = no_tree_model(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta, B_init=B_ahead)
-            B_ahead = B_hat.copy()
+        for lambda1 in parameter_ranges['lambda2']:
+            B_hat = no_tree_model(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta)
+            # B_hat = no_tree_model(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta, B_init=B_init)
+            # B_init = B_hat.copy()
             mbic = calculate_mbic(B_hat, X, Y, delta)
             # 记录每个 lambda1, lambda2 对应的 mbic
             # mbic_records[lambda1] = mbic
@@ -32,10 +34,10 @@ def grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=0.5, eta=0
         # hyperparameter_figure_v0(mbic_records, best_params)
 
     elif method == 'homo':
-        for lambda1 in parameter_ranges['lambda1']:
-            lambda1 = lambda1 * 2
-            B_hat = homogeneity_model(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta, B_init=B_ahead)
-            B_ahead = B_hat.copy()
+        for lambda1 in parameter_ranges['lambda2']:
+            # lambda1 = lambda1 * 0.7
+            B_hat = homogeneity_model(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta, B_init=B_init)
+            B_init = B_hat.copy()
             mbic = calculate_mbic(B_hat, X, Y, delta)
             # 记录每个 lambda1, lambda2 对应的 mbic
             # mbic_records[lambda1] = mbic

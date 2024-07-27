@@ -25,7 +25,10 @@ def refit(X_high, Y, delta, B_hat):
     p = X_high[0].shape[1]
     significance_pred = variable_significance(B_hat)
     significance_col = np.where(significance_pred == 1)[0]
-    X = [X_high[g][:, significance_col] for g in range(len(X_high))]   # truncate sample，提取显著变量
+    if significance_col.size != 0:
+        X = [X_high[g][:, significance_col] for g in range(len(X_high))]   # truncate sample，提取显著变量
+    else:
+        X = X_high.copy()   # 没有显著变量的边界情况
 
     # 合并同质组，并拟合
     group_labels = grouping_labels(B_hat)
@@ -42,7 +45,7 @@ def refit(X_high, Y, delta, B_hat):
         sksurv_coxph.fit(X_homo, Y_g_sksurv)
         # 输出估计值
         for i in similar_indices:
-            B_refit[i, significance_col] = sksurv_coxph.coef_
+            B_refit[i, significance_col] = sksurv_coxph.coef_   # 同质组的系数相同
     return B_refit
 
 
@@ -476,7 +479,7 @@ def generate_latex_table(results):
             else:
                 row.append(" &  & Notree")
 
-            for metric in ['TPR', 'FPR', 'SSE', 'C_index', 'RI', 'ARI', 'G']:
+            for metric in ['TPR', 'FPR', 'SSE', 'Cindex', 'RI', 'ARI', 'G']:
                 mean = result[method][metric]['mean']
                 std = result[method][metric]['std']
                 row.append(f"{mean:.2f} ({std:.2f})")

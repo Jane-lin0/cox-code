@@ -8,7 +8,7 @@ from related_functions import define_tree_structure, compute_Delta, internal_nod
     group_soft_threshold, gradient_descent_adam, get_coef_estimation, refit, get_D, get_gamma
 
 
-def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, tree_structure="G5", a=3, max_iter_m=400,
+def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, tree_structure="G5", a=3, max_iter_m=300,
                   max_iter_l=100, tolerance_l=1e-4, delta_primal=5e-5, delta_dual=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
@@ -132,9 +132,8 @@ def ADMM_optimize(X, Y, delta, lambda1, lambda2, rho=1, eta=0.1, tree_structure=
 
     B_hat = get_coef_estimation(B3, Gamma1, D)
     # B_refit = refit(X, Y, delta, B_hat)
-
-    return B_hat
     # return B_refit
+    return B_hat
 
 
 if __name__ == "__main__":
@@ -142,7 +141,8 @@ if __name__ == "__main__":
 
     start_time = time.time()
     # 生成模拟数据
-    G = 16  # 类别数
+    G = 5  # 类别数
+    tree_structure = "G5"
     p = 100  # 变量维度
     N_train = np.array([200]*G)
     N_test = np.array([500] * G)
@@ -157,7 +157,8 @@ if __name__ == "__main__":
     #                     'lambda2': np.linspace(0.05, 0.4, 4)}
     # lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
     #                                                                  rho=1, eta=0.2, method='proposed')
-    B_proposed = ADMM_optimize(X, Y, delta, lambda1=0.3, lambda2=0.05, rho=1, eta=0.2, a=3, tree_structure="G16")
+
+    B_proposed = ADMM_optimize(X, Y, delta, lambda1=0.3, lambda2=0.05, rho=1, eta=0.2, tree_structure=tree_structure)
     results = evaluate_coef_test(B_proposed, B, test_data)
     print(results)
 

@@ -21,14 +21,15 @@ from related_functions import get_mean_std, generate_latex_table, generate_latex
 start_time = time.time()
 """ ===================================== """
 G = 5  # 类别数
-p = 100  # 变量维度
+tree_structure = "G5"
+p = 200  # 变量维度
 rho = 1
-eta = 0.2
+eta = 0.3
 
 B_type = 1
 Correlation_type = "Band1"     # X 的协方差形式
 
-N_train = np.array([200] * G)    # 训练样本
+N_train = np.array([100] * G)    # 训练样本
 N_test = np.array([500] * G)
 """ ===================================== """
 results = {}
@@ -36,17 +37,18 @@ key = (B_type, Correlation_type)
 results[key] = {}
 
 for i in range(1):
-    train_data, test_data, B = generate_simulated_data(p, N_train, N_test,
-                                                       B_type=B_type, Correlation_type=Correlation_type, seed=0)
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=0.3,
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=i)
     X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
-
     parameter_ranges = {'lambda1': np.linspace(0.05, 0.3, 3),
-                        'lambda2': np.linspace(0.05, 0.4, 4)}
+                        'lambda2': np.linspace(0.01, 0.4, 5)}
 
-    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, "G5",
-                                                                                    rho=rho, eta=eta, method='proposed')
-    lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, "G5", rho=0.3,
-                                                                           eta=eta, method='heter')
+    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
+                                                                                    tree_structure, rho=rho, eta=eta,
+                                                                                    method='proposed')
+    lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta,
+                                                                           tree_structure, rho=rho, eta=eta,
+                                                                           method='heter')
     lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
                                                               method='notree')
     lambda1_homo, B_homo = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=rho, eta=eta,
@@ -75,20 +77,3 @@ print(f"running time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f}
 
 # if __name__ == "__main__":   # 确保正确处理多进程
 #     main()
-
-
-
-
-
-# lambda1_proposed, lambda2_proposed = 0.28, 0.05
-# lambda1_heter, lambda2_heter = 0.4, 0.05
-# lambda1_notree = 0.17
-# lambda1_homo = 0.05
-# B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
-# # B_init_proposed = initial_value_B(X, Y, delta, lambda1=lambda1_proposed, B_init=None)
-# B_proposed = ADMM_optimize(X, Y, delta, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=rho, eta=eta,
-#                            B_init=B_notree)
-# B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, rho, eta)
-# B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, eta=eta,
-#                               B_init=B_init_heter)
-# B_homo = homogeneity_model(X, Y, delta, lambda1=lambda1_homo, rho=rho, eta=eta)

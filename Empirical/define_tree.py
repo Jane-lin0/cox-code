@@ -10,7 +10,8 @@ df_full = pd.read_excel(r"state_added.xlsx")
 region_state_counts = pd.read_excel(r"region_state_counts.xlsx")
 
 # 计算样本数的分位数
-quantile = region_state_counts['sample_count'].quantile(0.8)  #0.8(G=11) 0.75(G=13)，0.7(G=16)
+quantile = region_state_counts['sample_count'].quantile(0.7)  # 0.8(G=11), 0.75(G=13), 0.7(G=16)
+
 # 过滤掉样本数小于分位数的行
 filtered_counts = region_state_counts[region_state_counts['sample_count'] >= quantile]
 
@@ -65,8 +66,6 @@ print("Postal to group mapping:", postal_to_group)
 # 将组标签分配到原始数据中
 df['Group'] = df['state_code'].apply(lambda x: postal_to_group.get(x, -1))
 
-# 保存结果
-df.to_excel(r"state_added_with_groups.xlsx", index=False)
 
 # 生成索引树
 # 自定义名称索引
@@ -108,5 +107,9 @@ print("Index tree edges:", tree_index.edges())
 G = len([node for node in tree_index.nodes() if tree_index.out_degree(node) == 0])
 with open(f"tree_index_G{G}.pkl", "wb") as f:
     pickle.dump(tree_index, f)
+
+
+# 保存结果
+df.to_excel(r"state_added_with_groups.xlsx", index=False)
 
 print(f"Running time: {(time.time() - start_time)/60} minutes")

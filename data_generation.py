@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 
@@ -10,26 +12,30 @@ def get_R_matrix(Y_g):
     return R_g
 
 
-# def true_B(G, p, B_type):
-#
-#     return B
-
-
-# def sigma_type(method, p):
-#
-#     return sigma
+def generate_random_numbers(n, seed):
+    if seed is not None:
+        random.seed(seed+2000)
+    random_numbers = []
+    for _ in range(n):
+        # 生成 0.2 到 0.6 之间的正数或负数
+        num = random.uniform(0.2, 0.6)
+        if random.choice([True, False]):
+            num = -num
+        random_numbers.append(num)
+    random_numbers = np.array(random_numbers)
+    return random_numbers
 
 
 def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censoring_rate=0.25, seed=None):
-    # 定义模拟数据生成函数
     if seed is not None:
         np.random.seed(seed+2000)
 
     G = len(N_train)
     # 真实系数
     if B_type == 1:
-        B = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
-                         (G, 1))  # 真实 G = 1
+        beta_significance = generate_random_numbers(n=10, seed=0)
+        # beta_significance = np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)])
+        B = np.tile(np.hstack([beta_significance, np.zeros(p - 10)]), (G, 1))  # 真实 G = 1
     elif B_type == 2:
         B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
                        (3, 1))  # 真实 G = 2
@@ -50,8 +56,8 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
     if Correlation_type == "AR(0.3)":
         rho = 0.3
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
-    elif Correlation_type == "AR(0.7)":
-        rho = 0.7
+    elif Correlation_type == "AR(0.5)":
+        rho = 0.5
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
     elif Correlation_type == "band1":
         sigma = np.vstack([[int(i == j) + 0.4 * int(np.abs(i - j) == 1) for j in range(p)] for i in range(p)])
@@ -102,33 +108,4 @@ if __name__ == "__main__":
                                                        B_type=1, Correlation_type="band1", seed=0)
     X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
     X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
-
-
-
-
-# X = []
-# Y = []
-# delta = []
-# R = []
-
-    # X.append(X_g)
-    # Y.append(Y_g)
-    # delta.append(delta_g)
-    # R.append(R_g)
-
-
-# # 模拟参数设置
-# G = 5  # 类别数
-# N_class = np.random.randint(low=100, high=300, size=G)   # 每个类别的样本数量
-# p = 10  # 自变量维度
-# # B = np.ones((G, p))
-# B = np.tile(np.array([0.5 if i % 2 == 0 else -0.5 for i in range(p)]), (G, 1))
-#
-# #
-# # 生成模拟数据
-# X, delta, R = generate_simulated_data(G, N_class, p, B)
-# g = 1
-# X_g = X[g]
-# delta_g = delta[g]
-# R_g = R[g]
 

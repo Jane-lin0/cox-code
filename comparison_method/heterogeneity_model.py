@@ -181,8 +181,9 @@ if __name__ == "__main__":
 
     # 生成模拟数据
     G = 5  # 类别数
-    p = 100  # 变量维度
-    N_train = np.array([200]*G)   # 每个类别的样本数量
+    tree_structure = "G5"
+    p = 200  # 变量维度
+    N_train = np.array([100]*G)   # 每个类别的样本数量
     N_test = np.array([500] * G)
 
     Correlation_type = "Band1"  # X 的协方差形式
@@ -192,35 +193,39 @@ if __name__ == "__main__":
     key = (B_type, Correlation_type)
     results[key] = {}
 
-    train_data, test_data, B = generate_simulated_data(p, N_train, N_test,
-                                                       B_type=B_type, Correlation_type=Correlation_type, seed=0)
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, B_type=B_type, censoring_rate=0.3,
+                                                       Correlation_type=Correlation_type, seed=0)
     X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
 
-    # parameter_ranges = {
-    #     'lambda1': np.linspace(0.05, 0.3, 3),
-    #     'lambda2': np.linspace(0.05, 0.4, 4)
-    # }
-    # lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, "G5", rho=0.5,
-    #                                                                        eta=0.2, method='heter')
-    # lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=1, eta=0.2,
-    #                                                           method='notree')
-    lambda1_heter, lambda2_heter = 0.3, 0.15
-    lambda1_notree = 0.15
-    B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=1, eta=0.2)
-    # B_init_heter = initial_value_B(X, Y, delta, lambda1_heter, 1, 0.2)
-    B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=0.3, eta=0.3,
-                                  B_init=B_notree)
+    if False:
+        parameter_ranges = {
+            'lambda1': np.linspace(0.05, 0.3, 3),
+            'lambda2': np.linspace(0.05, 0.4, 4)
+        }
+        lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, tree_structure,
+                                                                               rho=1, eta=0.2, method='heter')
+        lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=1, eta=0.2,
+                                                                  method='notree')
+    else:
+        lambda1_heter, lambda2_heter = 0.3, 0.4
+        B_notree = no_tree_model(X, Y, delta, lambda1=0.17, rho=1, eta=0.2)
+        B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=1, eta=0.2,
+                                      B_init=B_notree)
+        B_solo = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=1, eta=0.2)
+
+    # B_refit = refit(X, Y, delta, B_heter)
 
     results[key]['heter'] = evaluate_coef_test(B_heter, B, test_data)
+    # results[key]['refit'] = evaluate_coef_test(B_refit, B, test_data)
+    results[key]['solo'] = evaluate_coef_test(B_solo, B, test_data)
     results[key]['notree'] = evaluate_coef_test(B_notree, B, test_data)
 
     dists = pdist(B_heter, metric='euclidean')
     # dist_matrix[i,j] = 第 i 行 和 第 j 行 的距离
     dist_matrix = squareform(dists)
 
-    print(f"heter method running time:{(time.time() - start_time)/60} minutes")
-
     print(results)
+    print(f"heter method running time:{(time.time() - start_time)/60} minutes")
 
 
 
