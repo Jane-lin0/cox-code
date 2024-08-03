@@ -62,11 +62,11 @@ def gradient_descent_adam_hetero(beta, X_g, delta_g, R_g, beta3, u, beta_a_w, rh
 #         beta_a_w += B1[g_] - beta + A[l] - W[l]
 
 
-def heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=0.5, eta=0.3, a=3, max_iter_m=300, max_iter_l=100,
+def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.3, a=3, max_iter_m=300, max_iter_l=100,
                         tolerance_l=1e-4, delta_dual=5e-5, delta_prime=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
-    R = [get_R_matrix(Y[g]) for g in range(G)]
+    # R = [get_R_matrix(Y[g]) for g in range(G)]
     # N = np.sum([len(X[g]) for g in range(G)])
     # B1 = initial_value_B(X, delta, R)
     if B_init is None:
@@ -196,6 +196,7 @@ if __name__ == "__main__":
     train_data, test_data, B = generate_simulated_data(p, N_train, N_test, B_type=B_type, censoring_rate=0.3,
                                                        Correlation_type=Correlation_type, seed=0)
     X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
+    R = [get_R_matrix(Y[g]) for g in range(G)]
 
     if False:
         parameter_ranges = {
@@ -208,10 +209,10 @@ if __name__ == "__main__":
                                                                   method='notree')
     else:
         lambda1_heter, lambda2_heter = 0.3, 0.4
-        B_notree = no_tree_model(X, Y, delta, lambda1=0.17, rho=1, eta=0.2)
-        B_heter = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=1, eta=0.2,
+        B_notree = no_tree_model(X, delta, Y, lambda1=0.17, rho=1, eta=0.2)
+        B_heter = heterogeneity_model(X, delta, R, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=1, eta=0.2,
                                       B_init=B_notree)
-        B_solo = heterogeneity_model(X, Y, delta, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=1, eta=0.2)
+        B_solo = heterogeneity_model(X, delta, R, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=1, eta=0.2)
 
     # B_refit = refit(X, Y, delta, B_heter)
 

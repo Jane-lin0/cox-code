@@ -1,7 +1,7 @@
 import time
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from data_generation import generate_simulated_data
+from data_generation import generate_simulated_data, get_R_matrix
 from Hyperparameter.hyperparameter_functions import evaluate_hyperparameters_shared
 # hyperparameter_figure, evaluate_hyperparameters
 
@@ -11,6 +11,7 @@ from Hyperparameter.hyperparameter_functions import evaluate_hyperparameters_sha
 
 
 def grid_search_hyperparameters(parameter_ranges, X, Y, delta, method, eta):
+    R = [get_R_matrix(Y[g]) for g in range(G)]
     best_mbic = float('inf')
     # best_params = {}
     best_params = {'lambda1': None, 'lambda2': None, 'mbic': None}
@@ -22,8 +23,8 @@ def grid_search_hyperparameters(parameter_ranges, X, Y, delta, method, eta):
     # 将X, delta, R, rho, eta, method放入一个共享的字典中
     shared_data = {
         'X': X,
-        'Y': Y,
         'delta': delta,
+        'R': R,
         'eta': eta,
         'method': method
     }

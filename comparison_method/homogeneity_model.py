@@ -4,7 +4,7 @@ from data_generation import get_R_matrix
 from related_functions import group_soft_threshold, gradient_descent_adam_homo, compute_Delta, refit
 
 
-def homogeneity_beta(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5,
+def homogeneity_beta(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tolerance_l=1e-4, delta_dual=5e-5,
                      delta_primal=5e-5, beta_init=None):
     p = X[0].shape[1]
 
@@ -15,7 +15,7 @@ def homogeneity_beta(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tol
         beta1 = beta_init.copy()
     beta3 = beta1.copy()
     u = np.zeros(p)
-    R = [get_R_matrix(Y[g]) for g in range(len(X))]
+    # R = [get_R_matrix(Y[g]) for g in range(len(X))]
 
     # ADMM算法主循环
     for m in range(M):
@@ -67,14 +67,14 @@ def homogeneity_beta(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tol
     return beta_hat
 
 
-def homogeneity_model(X, Y, delta, lambda1, rho=1, eta=0.1, a=3, M=300, L=100, tolerance_l=1e-4, delta_dual=5e-5,
+def homogeneity_model(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=300, L=100, tolerance_l=1e-4, delta_dual=5e-5,
                       delta_primal=5e-5, B_init=None):
     G = len(X)
     if B_init is None:
         beta_init = None
     else:
         beta_init = B_init[0].copy()  # B_init 每行一样
-    beta = homogeneity_beta(X, Y, delta, lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L, tolerance_l=tolerance_l,
+    beta = homogeneity_beta(X, delta, R, lambda1=lambda1, rho=rho, eta=eta, a=a, M=M, L=L, tolerance_l=tolerance_l,
                             delta_dual=delta_dual, delta_primal=delta_primal, beta_init=beta_init)
     B_homo = np.tile(beta, (G, 1))
 
@@ -108,7 +108,8 @@ if __name__ == "__main__":
 
     train_data, test_data, B = generate_simulated_data(p, N_train, N_test,
                                                        B_type=B_type, Correlation_type=Correlation_type, seed=0)
-    X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
+    X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
+
     if False:
         parameter_ranges = {'lambda1': np.linspace(0.05, 0.3, 3),
                             'lambda2': np.linspace(0.05, 0.4, 4)}
@@ -118,11 +119,11 @@ if __name__ == "__main__":
                                                                                         method='proposed')
     else:
         lambda1 = 0.12
-        B_homo = homogeneity_model(X, Y, delta, lambda1=lambda1, rho=1, eta=0.3)
+        B_homo = homogeneity_model(X, delta, R, lambda1=lambda1, rho=1, eta=0.3)
 
         lambda1_proposed, lambda2_proposed = 0.3, 0.28
-        B_proposed = ADMM_optimize(X, Y, delta, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=1, eta=0.2,
-                                   B_init=None, tree_structure=tree_structure)
+        B_proposed = ADMM_optimize(X, delta, R, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=1, eta=0.2,
+                                   tree_structure=tree_structure, B_init=None)
 
     # B_refit = refit(X, Y, delta, B_homo)
     results[key]['homo'] = evaluate_coef_test(B_homo, B, test_data)

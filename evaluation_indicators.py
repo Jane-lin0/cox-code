@@ -6,14 +6,9 @@ from sklearn.metrics import adjusted_rand_score, rand_score
 """ variable selection evaluation """
 
 
-def variable_significance(B_mat, threshold=0.05):
-    G = B_mat.shape[0]
-    p = B_mat.shape[1]
-    significance = np.ones(p)
-    for j in range(p):
-        # if np.linalg.norm(B_mat[:, j]) < np.sqrt(G) * threshold:
-        if np.linalg.norm(B_mat[:, j]) == 0:
-            significance[j] = 0
+def variable_significance(B_mat):
+    significance_matrix = (B_mat != 0).astype(int)
+    significance = significance_matrix.flatten()
     return significance
 
 
@@ -112,7 +107,7 @@ def group_num(B, tol=5e-2):      # 类似 unique，但是是合并相似而不�
     return num_groups
 
 
-def grouping_labels(B, tol=1e-2):
+def grouping_labels(B, tol=5e-2):
     G = B.shape[0]
     dists = pdist(B, metric='euclidean')
     dist_matrix = squareform(dists)

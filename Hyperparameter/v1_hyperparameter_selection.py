@@ -8,7 +8,7 @@ import seaborn as sns
 from Hyperparameter.hyperparameter_functions import calculate_mbic
 from comparison_method.heterogeneity_model import heterogeneity_model
 from comparison_method.no_tree_model import no_tree_model
-from data_generation import generate_simulated_data
+from data_generation import generate_simulated_data, get_R_matrix
 from main_ADMM import ADMM_optimize
 
 ''' 超参数选择 单线程运算
@@ -16,19 +16,19 @@ from main_ADMM import ADMM_optimize
 将前一组的超参数选择结果（B_hat）设为下一组的初值'''
 
 
-def grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, tree_structure, rho=0.5, eta=0.1, method='proposed'):
+def grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=0.5, eta=0.1, method='proposed'):
     best_mbic = float('inf')
     best_params = {}
     # mbic_records = {}
-    B_init = no_tree_model(X, Y, delta, lambda1=0.2, rho=rho, eta=eta)  # 初始值
+    B_init = no_tree_model(X, delta, R, lambda1=0.1, rho=rho, eta=eta)  # 初始值
 
     if method == 'proposed':
         for lambda1 in parameter_ranges['lambda1']:
             for lambda2 in parameter_ranges['lambda2']:
-                B_hat = ADMM_optimize(X, Y, delta, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta, B_init=B_init,
-                                      tree_structure=tree_structure)
+                B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta,
+                                      tree_structure=tree_structure, B_init=B_init)
                 B_init = B_hat.copy()
-                mbic = calculate_mbic(B_hat, X, Y, delta)
+                mbic = calculate_mbic(B_hat, X, delta, R)
                 # 记录每个 lambda1, lambda2 对应的 mbic
                 # mbic_records[(lambda1, lambda2)] = mbic
                 # 检查是否找到了更好的参数
@@ -41,16 +41,16 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, tree_structure
         for lambda1 in parameter_ranges['lambda1']:
             for lambda2 in parameter_ranges['lambda2']:
                 # lambda2 = lambda2 * 0.7    # 1.5
-                B_hat = heterogeneity_model(X, Y, delta, lambda1, lambda2, rho=rho, eta=eta, B_init=B_init)
+                B_hat = heterogeneity_model(X, delta, R, lambda1, lambda2, rho=rho, eta=eta, B_init=B_init)
                 B_init = B_hat.copy()
-                mbic = calculate_mbic(B_hat, X, Y, delta)
+                mbic = calculate_mbic(B_hat, X, delta, R)
                 # mbic_records[(lambda1, lambda2)] = mbic
                 # 检查是否找到了更好的参数
                 if mbic < best_mbic:
                     best_mbic = mbic
                     best_params = {'lambda1': lambda1, 'lambda2': lambda2, 'mbic': best_mbic}
                     # B_best = B_hat.copy()
-        B_best = heterogeneity_model(X, Y, delta, best_params['lambda1'], best_params['lambda2'], rho=rho, eta=eta)
+        B_best = heterogeneity_model(X, delta, R, best_params['lambda1'], best_params['lambda2'], rho=rho, eta=eta)
 
     # hyperparameter_figure_v1(mbic_records, best_params)
     print(f"method={method}, best params={best_params}")
@@ -103,16 +103,17 @@ if __name__ == "__main__":
     train_data, test_data, B = generate_simulated_data(p, N_train, N_test=[0]*G,
                                                        B_type=1, Correlation_type="band1", seed=0)
     X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
+    R = [get_R_matrix(Y[g]) for g in range(G)]
     # X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
 
     # 执行网格搜索
     parameter_ranges = {'lambda1': np.linspace(0.01, 0.3, 3),
                         'lambda2': np.linspace(0.01, 0.3, 3)}
     # 执行网格搜索
-    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, "G5",
+    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, "G5",
                                                                                     rho=rho, eta=eta, method='proposed')
 
-    lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, "G5", rho=rho,
+    lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, "G5", rho=rho,
                                                                            eta=eta, method='heter')
 
     # 计算运行时间

@@ -37,9 +37,11 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
         # beta_significance = np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)])
         B = np.tile(np.hstack([beta_significance, np.zeros(p - 10)]), (G, 1))  # 真实 G = 1
     elif B_type == 2:
-        B_G1 = np.tile(np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)]),
+        # beta_significance = np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)])
+        beta_significance = generate_random_numbers(n=10, seed=0)
+        B_G1 = np.tile(np.hstack([beta_significance, np.zeros(p - 10)]),
                        (3, 1))  # 真实 G = 2
-        B_G2 = np.tile(np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)]),
+        B_G2 = np.tile(np.hstack([-beta_significance, np.zeros(p - 10)]),
                        (2, 1))
         B = np.vstack([B_G1, B_G2])
     elif B_type == 3:
@@ -73,8 +75,8 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
     else:
         sigma = np.eye(p)
 
-    train_data = dict(X=[], Y=[], delta=[])
-    test_data = dict(X=[], Y=[], delta=[])
+    train_data = dict(X=[], Y=[], delta=[], R=[])
+    test_data = dict(X=[], Y=[], delta=[], R=[])
     for g in range(G):
         N_g = N_train[g] + N_test[g]
 
@@ -99,6 +101,9 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
         train_data['delta'].append(delta_g[:N_train[g]])
         test_data['delta'].append(delta_g[N_train[g]:])
 
+    train_data['R'] = [get_R_matrix(train_data['Y'][g]) for g in range(G)]
+    test_data['R'] = [get_R_matrix(test_data['Y'][g]) for g in range(G)]
+
     return train_data, test_data, B
 
 
@@ -106,6 +111,6 @@ if __name__ == "__main__":
     G = 5
     train_data, test_data, B = generate_simulated_data(p=20, N_train=[20]*G, N_test=[50]*G,
                                                        B_type=1, Correlation_type="band1", seed=0)
-    X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
-    X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
+    X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
+    X_test, Y_test, delta_test, R_test = test_data['X'], test_data['Y'], test_data['delta'], test_data['R']
 

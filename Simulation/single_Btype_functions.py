@@ -32,7 +32,7 @@ def single_iteration(G, p, N_train, N_test, B, Correlation_type, rho=0.5, eta=0.
 
 
     # NO tree method
-    B_notree = no_tree_model(X, Y, delta, lambda1=lambda1_notree, rho=rho, eta=eta)
+    B_notree = no_tree_model(X, delta, Y, lambda1=lambda1_notree, rho=rho, eta=eta)
     # 变量选择评估
     significance_true = variable_significance(B)
     significance_pred_notree = variable_significance(B_notree)
@@ -55,7 +55,7 @@ def single_iteration(G, p, N_train, N_test, B, Correlation_type, rho=0.5, eta=0.
 
     # Proposed method
     B_init_proposed = initial_value_B(X, Y, delta, lambda1=lambda1_proposed, B_init=None)
-    B_hat = ADMM_optimize(X, Y, delta, lambda1=lambda1_proposed, lambda2=lambda1_proposed, rho=rho, eta=eta, a=3,
+    B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1_proposed, lambda2=lambda1_proposed, rho=rho, eta=eta, a=3,
                           delta_primal=5e-5, delta_dual=5e-5, B_init=B_init_proposed)
     # 变量选择评估
     significance_true = variable_significance(B)

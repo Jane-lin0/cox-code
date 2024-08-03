@@ -41,11 +41,14 @@ def refit(X_high, Y, delta, B_hat):
         delta_homo = np.vstack([delta[i].reshape(-1, 1) for i in similar_indices]).flatten()
         # 拟合cox
         Y_g_sksurv = transform_y(Y_homo, delta_homo)
-        sksurv_coxph = CoxPHSurvivalAnalysis()
+        sksurv_coxph = CoxPHSurvivalAnalysis(alpha=0.1, n_iter=300)
         sksurv_coxph.fit(X_homo, Y_g_sksurv)
         # 输出估计值
         for i in similar_indices:
-            B_refit[i, significance_col] = sksurv_coxph.coef_   # 同质组的系数相同
+            if significance_col.size != 0:
+                B_refit[i, significance_col] = sksurv_coxph.coef_   # 同质组的系数相同
+            else:
+                B_refit[i, :] = sksurv_coxph.coef_
     return B_refit
 
 
@@ -393,7 +396,7 @@ def get_D(tree):
     D = np.empty(shape=(G, K))
     for leaf in leaves:
         vector = np.zeros(K)
-        ancestors = get_leaf_and_ancestors(tree, leaf) # 对应叶节点及其祖父节点
+        ancestors = get_leaf_and_ancestors(tree, leaf)   # 对应叶节点及其祖父节点
         vector[ancestors] = 1
         D[leaf] = vector
     return D
