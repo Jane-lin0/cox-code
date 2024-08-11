@@ -21,6 +21,7 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure
     best_params = {}
     # mbic_records = {}
     B_init = no_tree_model(X, delta, R, lambda1=0.1, rho=rho, eta=eta)  # 初始值
+    # B_init = None
 
     if method == 'proposed':
         for lambda1 in parameter_ranges['lambda1']:

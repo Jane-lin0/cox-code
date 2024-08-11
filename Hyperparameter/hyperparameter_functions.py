@@ -11,9 +11,7 @@ from main_ADMM import ADMM_optimize
 
 def calculate_mbic(B, X, delta, R):
     G = B.shape[0]
-    # p = B.shape[1]
     N = np.sum([X[g].shape[0] for g in range(B.shape[0])])
-    # R = [get_R_matrix(Y[g]) for g in range(G)]
     log_likelihood = 0
     for g in range(G):
         X_beta = np.dot(X[g], B[g])
@@ -21,17 +19,18 @@ def calculate_mbic(B, X, delta, R):
     # 计算mBIC
     B_unique = np.unique(B, axis=0)   # 删除重复行
     params_num = parameters_num(B_unique)
-    penalty_term = params_num * np.log(N)      # 0.495
+    penalty_term = params_num * np.log(N)      # np.log(N)  0.495
     mbic = (- log_likelihood + penalty_term) / N
     return mbic
 
 
 def calculate_bic_beta(beta, X, delta, R):
+    N = len(X)
     X_beta = np.dot(X, beta.T)
     log_likelihood = delta.T @ (X_beta - np.log(R @ np.exp(X_beta)))
     S_vec = (beta != 0).astype(int)
     params_num = np.sum(S_vec)
-    bic = - log_likelihood + params_num * 2
+    bic = (- log_likelihood + params_num * 2) / N
     # bic = - log_likelihood + np.sqrt(params_num) * 2
     return bic
 

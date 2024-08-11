@@ -37,21 +37,38 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
         # beta_significance = np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)])
         B = np.tile(np.hstack([beta_significance, np.zeros(p - 10)]), (G, 1))  # 真实 G = 1
     elif B_type == 2:
-        # beta_significance = np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)])
-        beta_significance = generate_random_numbers(n=10, seed=0)
-        B_G1 = np.tile(np.hstack([beta_significance, np.zeros(p - 10)]),
-                       (3, 1))  # 真实 G = 2
-        B_G2 = np.tile(np.hstack([-beta_significance, np.zeros(p - 10)]),
-                       (2, 1))
-        B = np.vstack([B_G1, B_G2])
+        if G == 5:
+            beta_significance = np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)])
+            # beta_significance = generate_random_numbers(n=10, seed=0)
+            B_G1 = np.tile(np.hstack([beta_significance, np.zeros(p - 10)]), (3, 1))  # 真实 G = 2
+            B_G2 = np.tile(np.hstack([-beta_significance, np.zeros(p - 10)]), (2, 1))
+            B = np.vstack([B_G1, B_G2])
+        elif G == 11:
+            beta_significance = np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)])
+            # beta_significance = generate_random_numbers(n=10, seed=0)
+            B_G11 = np.hstack([beta_significance, np.zeros(p - 10)])
+            B_G14 = np.tile(np.hstack([beta_significance, np.zeros(p - 10)]), (4, 1))
+            B_G23 = np.tile(np.hstack([-beta_significance, np.zeros(p - 10)]), (3, 1))
+            B = np.vstack([B_G11, B_G23, B_G14, B_G23])   # 错开分组
     elif B_type == 3:
-        B_G1 = np.tile(np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)]),
-                       (3, 1))
-        B_G2 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(5)]), np.zeros(5),
-                          np.array([0.5 if i % 2 == 0 else -0.5 for i in range(5)]), np.zeros(p - 15)])
-        B_G3 = np.hstack([np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(5)]), np.zeros(5),
-                          np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(5)]), np.zeros(p - 15)])
-        B = np.vstack([B_G1, B_G2, B_G3])
+        if G == 5:
+            beta_significance1 = np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)])
+            beta_significance2 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(5)]), np.zeros(5),
+                                            np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(5)])])
+            beta_significance3 = np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(5)]), np.zeros(5),
+                                            np.array([0.3 if i % 2 == 0 else -0.3 for i in range(5)])])
+            B_G1 = np.tile(np.hstack([beta_significance1, np.zeros(p - 10)]), (3, 1))
+            B_G2 = np.hstack([beta_significance2, np.zeros(p - 15)])
+            B_G3 = np.hstack([beta_significance3, np.zeros(p - 15)])
+            B = np.vstack([B_G1, B_G2, B_G3])
+        elif G == 11:
+            beta_significance1 = np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)])
+            beta_significance2 = np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(10)])
+            beta_significance3 = np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)])
+            B_G1 = np.tile(np.hstack([beta_significance1, np.zeros(p - 10)]), (4, 1))
+            B_G2 = np.tile(np.hstack([beta_significance2, np.zeros(p - 10)]), (4, 1))
+            B_G3 = np.tile(np.hstack([beta_significance3, np.zeros(p - 10)]), (3, 1))
+            B = np.vstack([B_G1, B_G2, B_G3])
 
     # sigma = sigma_type(method, p)
     # X 的协方差矩阵
@@ -110,7 +127,7 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
 if __name__ == "__main__":
     G = 5
     train_data, test_data, B = generate_simulated_data(p=20, N_train=[20]*G, N_test=[50]*G,
-                                                       B_type=1, Correlation_type="band1", seed=0)
+                                                       B_type=3, Correlation_type="band1", seed=0)
     X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
     X_test, Y_test, delta_test, R_test = test_data['X'], test_data['Y'], test_data['delta'], test_data['R']
 

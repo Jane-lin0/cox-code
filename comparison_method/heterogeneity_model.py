@@ -62,7 +62,7 @@ def gradient_descent_adam_hetero(beta, X_g, delta_g, R_g, beta3, u, beta_a_w, rh
 #         beta_a_w += B1[g_] - beta + A[l] - W[l]
 
 
-def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.3, a=3, max_iter_m=300, max_iter_l=100,
+def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.3, a=3, max_iter_m=200, max_iter_l=100,
                         tolerance_l=1e-4, delta_dual=5e-5, delta_prime=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
@@ -180,45 +180,44 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # 生成模拟数据
-    G = 5  # 类别数
-    tree_structure = "G5"
-    p = 200  # 变量维度
-    N_train = np.array([100]*G)   # 每个类别的样本数量
+    G = 11  # 类别数
+    tree_structure = "G11"
+    p = 100  # 变量维度
+    N_train = np.array([200]*G)   # 每个类别的样本数量
     N_test = np.array([500] * G)
 
     Correlation_type = "Band1"  # X 的协方差形式
-    B_type = 1
+    B_type = 2
 
     results = {}
     key = (B_type, Correlation_type)
     results[key] = {}
 
-    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, B_type=B_type, censoring_rate=0.3,
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, B_type=B_type, censoring_rate=0.25,
                                                        Correlation_type=Correlation_type, seed=0)
-    X, Y, delta = train_data['X'], train_data['Y'], train_data['delta']
-    R = [get_R_matrix(Y[g]) for g in range(G)]
+    X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
 
     if False:
         parameter_ranges = {
             'lambda1': np.linspace(0.05, 0.3, 3),
             'lambda2': np.linspace(0.05, 0.4, 4)
         }
-        lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, Y, delta, tree_structure,
+        lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure,
                                                                                rho=1, eta=0.2, method='heter')
-        lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, Y, delta, rho=1, eta=0.2,
+        lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.2,
                                                                   method='notree')
     else:
         lambda1_heter, lambda2_heter = 0.3, 0.4
-        B_notree = no_tree_model(X, delta, Y, lambda1=0.17, rho=1, eta=0.2)
+        B_notree = no_tree_model(X, delta, R, lambda1=0.1, rho=1, eta=0.2)
         B_heter = heterogeneity_model(X, delta, R, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=1, eta=0.2,
                                       B_init=B_notree)
-        B_solo = heterogeneity_model(X, delta, R, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=1, eta=0.2)
+        # B_solo = heterogeneity_model(X, delta, R, lambda1=lambda1_heter, lambda2=lambda2_heter, rho=1, eta=0.2)
 
     # B_refit = refit(X, Y, delta, B_heter)
 
     results[key]['heter'] = evaluate_coef_test(B_heter, B, test_data)
     # results[key]['refit'] = evaluate_coef_test(B_refit, B, test_data)
-    results[key]['solo'] = evaluate_coef_test(B_solo, B, test_data)
+    # results[key]['solo'] = evaluate_coef_test(B_solo, B, test_data)
     results[key]['notree'] = evaluate_coef_test(B_notree, B, test_data)
 
     dists = pdist(B_heter, metric='euclidean')

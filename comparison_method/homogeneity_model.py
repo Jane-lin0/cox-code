@@ -67,7 +67,7 @@ def homogeneity_beta(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tol
     return beta_hat
 
 
-def homogeneity_model(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=300, L=100, tolerance_l=1e-4, delta_dual=5e-5,
+def homogeneity_model(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=200, L=100, tolerance_l=1e-4, delta_dual=5e-5,
                       delta_primal=5e-5, B_init=None):
     G = len(X)
     if B_init is None:
@@ -95,8 +95,8 @@ if __name__ == "__main__":
     # 生成模拟数据
     G = 5  # 类别数
     tree_structure = "G5"
-    p = 200  # 变量维度
-    N_train = np.array([200]*G)   # 每个类别的样本数量
+    p = 100  # 变量维度
+    N_train = np.array([100]*G)   # 每个类别的样本数量
     N_test = np.array([500]*G)
 
     Correlation_type = "Band1"  # X 的协方差形式
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     results[key] = {}
 
     train_data, test_data, B = generate_simulated_data(p, N_train, N_test,
-                                                       B_type=B_type, Correlation_type=Correlation_type, seed=0)
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=12)
     X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
 
     if False:
@@ -118,19 +118,20 @@ if __name__ == "__main__":
                                                                                         "G5", rho=1, eta=0.2,
                                                                                         method='proposed')
     else:
-        lambda1 = 0.12
-        B_homo = homogeneity_model(X, delta, R, lambda1=lambda1, rho=1, eta=0.3)
-
-        lambda1_proposed, lambda2_proposed = 0.3, 0.28
-        B_proposed = ADMM_optimize(X, delta, R, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=1, eta=0.2,
+        lambda1_proposed, lambda2_proposed = 0.3, 0.05
+        B_proposed = ADMM_optimize(X, delta, R, lambda1=lambda1_proposed, lambda2=lambda2_proposed, rho=1, eta=0.1,
                                    tree_structure=tree_structure, B_init=None)
 
-    # B_refit = refit(X, Y, delta, B_homo)
-    results[key]['homo'] = evaluate_coef_test(B_homo, B, test_data)
-    # results[key]['refit'] = evaluate_coef_test(B_refit, B, test_data)
-    results[key]['proposed'] = evaluate_coef_test(B_proposed, B, test_data)
+        for lambda1 in np.linspace(0.01, 0.2, 8):
+            print(f"\n lambda1={lambda1}")
+            B_homo = homogeneity_model(X, delta, R, lambda1=lambda1, rho=1, eta=0.2)
 
-    print(results)
+            # B_refit = refit(X, Y, delta, B_homo)
+            results[key]['homo'] = evaluate_coef_test(B_homo, B, test_data)
+            # results[key]['refit'] = evaluate_coef_test(B_refit, B, test_data)
+            # results[key]['proposed'] = evaluate_coef_test(B_proposed, B, test_data)
+
+            print(results)
 
     print(f"running time: {(time.time() - start_time)/60} minutes")
 

@@ -125,7 +125,7 @@ def grouping_labels(B, tol=5e-2):
     return group_labels
 
 
-def sample_labels(B, N_list, tol=1e-2):
+def sample_labels(B, N_list, tol=5e-2):
     group_label = grouping_labels(B, tol=tol)
 
     sample_labels = []

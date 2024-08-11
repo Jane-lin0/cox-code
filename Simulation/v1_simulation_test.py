@@ -22,14 +22,12 @@ start_time = time.time()
 """ ===================================== """
 G = 5  # 类别数
 tree_structure = "G5"
-p = 200  # 变量维度
-rho = 1
-eta = 0.2
+p = 100  # 变量维度
 
 B_type = 1
 Correlation_type = "Band1"     # X 的协方差形式
 
-N_train = np.array([200] * G)    # 训练样本
+N_train = np.array([100] * G)    # 训练样本
 N_test = np.array([500] * G)
 """ ===================================== """
 results = {}
@@ -38,22 +36,27 @@ results[key] = {}
 
 for i in range(1):
     train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=0.25,
-                                                       B_type=B_type, Correlation_type=Correlation_type, seed=i)
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=6)
     X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
-    parameter_ranges = {'lambda1': np.linspace(0.05, 0.3, 3),
-                        'lambda2': np.linspace(0.01, 0.4, 5)}
+    if True:
+        parameter_ranges = {'lambda1': np.linspace(0.05, 0.3, 3),
+                            'lambda2': np.linspace(0.01, 0.4, 5)}
 
-    lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R,
-                                                                                    tree_structure, rho=rho, eta=eta,
-                                                                                    method='proposed')
-    lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R,
-                                                                           tree_structure, rho=rho, eta=eta,
-                                                                           method='heter')
-    lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta,
-                                                              method='notree')
-    lambda1_homo, B_homo = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta,
-                                                          method='homo')
-
+        lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R,
+                                                                                        tree_structure, rho=1, eta=0.1,
+                                                                                        method='proposed')
+        lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R,
+                                                                               tree_structure, rho=1, eta=0.2,
+                                                                               method='heter')
+        lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.15,
+                                                                  method='notree')
+        lambda1_homo, B_homo = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.3, method='homo')
+    else:
+        B_notree = no_tree_model(X, delta, R, lambda1=0.14, rho=1, eta=0.1)
+        B_proposed = ADMM_optimize(X, delta, R, lambda1=0.3, lambda2=0.05, rho=1, eta=0.1, B_init=B_notree, tree_structure=tree_structure)
+        B_heter = heterogeneity_model(X, delta, R, lambda1=0.3, lambda2=0.4, rho=1, eta=0.2, B_init=B_notree)
+        B_homo = homogeneity_model(X, delta, R, lambda1=0.09, rho=1, eta=0.2)
+    # lambda1 = 0.3, lambda2 = 0.0575
     # NO tree method
     results[key]['notree'] = evaluate_coef_test(B_notree, B, test_data)
 
