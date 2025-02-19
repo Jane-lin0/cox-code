@@ -170,6 +170,12 @@ def evaluate_coef_test(B_hat, B, test_data):
                    RI=RI,
                    ARI=ARI,
                    G=G_num)
+
+    # 遍历字典，将浮点数近似为两位小数
+    for metric, value in results.items():
+        if isinstance(value, float):
+            results[metric] = round(value, 2)
+
     return results
 
     # results['TPR'] = TPR

@@ -29,14 +29,13 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
                             'lambda2': np.linspace(0.01, 0.4, 5)}
         # 执行网格搜索
         # 串行计算
-        lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R,
-                                                                                        tree_structure, rho=rho, eta=eta,
-                                                                                        method='proposed')
-        lambda1_heter, lambda2_heter, B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure,
-                                                                               rho=rho, eta=eta, method='heter')
-        lambda1_notree, B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta,
+        B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=rho, eta=eta,
+                                                    method='proposed')
+        B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=rho, eta=eta,
+                                                 method='heter')
+        B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta,
                                                                   method='notree')
-        lambda1_homo, B_homo = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta,
+        B_homo = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=rho, eta=eta,
                                                               method='homo')
     else:
         B_notree = no_tree_model(X, delta, R, lambda1=0.14, rho=1, eta=0.1)

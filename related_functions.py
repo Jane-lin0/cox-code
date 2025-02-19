@@ -26,9 +26,9 @@ def refit(X_high, Y, delta, B_hat):
     significance_pred = variable_significance(B_hat)
     significance_col = np.where(significance_pred == 1)[0]
     if significance_col.size != 0:
-        X = [X_high[g][:, significance_col] for g in range(len(X_high))]   # truncate sample，提取显著变量
+        X = [X_high[g][:, significance_col] for g in range(len(X_high))]  # truncate sample，提取显著变量
     else:
-        X = X_high.copy()   # 没有显著变量的边界情况
+        X = X_high.copy()  # 没有显著变量的边界情况
 
     # 合并同质组，并拟合
     group_labels = grouping_labels(B_hat)
@@ -46,7 +46,7 @@ def refit(X_high, Y, delta, B_hat):
         # 输出估计值
         for i in similar_indices:
             if significance_col.size != 0:
-                B_refit[i, significance_col] = sksurv_coxph.coef_   # 同质组的系数相同
+                B_refit[i, significance_col] = sksurv_coxph.coef_  # 同质组的系数相同
             else:
                 B_refit[i, :] = sksurv_coxph.coef_
     return B_refit
@@ -71,15 +71,16 @@ def check_nan_inf(data, name, clip_value=1):
     if np.abs(data).max() > 10:
         print(f"Values exceeding magnitude of 10 detected in {name}")
 
-# if np.abs(data).max() > 10:
-    #     print(f"Values exceeding magnitude of 10 detected in {name}")
-    #     return clip_matrix(data, clip_value)
-    # else:
-    #     return data
 
-    # if np.abs(data).max() > 50:
-    #     print(f"Values exceeding magnitude of 50 detected in {name}")
-    #     raise ValueError(f"Values exceeding magnitude of 50 detected in {name}")
+# if np.abs(data).max() > 10:
+#     print(f"Values exceeding magnitude of 10 detected in {name}")
+#     return clip_matrix(data, clip_value)
+# else:
+#     return data
+
+# if np.abs(data).max() > 50:
+#     print(f"Values exceeding magnitude of 50 detected in {name}")
+#     raise ValueError(f"Values exceeding magnitude of 50 detected in {name}")
 
 
 def clip_matrix(mat, clip_value):
@@ -91,7 +92,7 @@ def clip_matrix(mat, clip_value):
 
 
 # log_likelihood_check
-def log_likelihood_check(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho):
+def log_likelihood_check(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho):
     # try:
     #     with warnings.catch_warnings():       # warnings 转换成 error
     #         warnings.filterwarnings('error')
@@ -135,15 +136,15 @@ def log_likelihood_check(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho)
 
 
 # log_likelihood_analytic
-def log_likelihood(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho):
+def log_likelihood(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho):
     log_likelihood = - delta_g.T @ (X_g @ beta - np.log(R_g @ np.exp(X_g @ beta))) / N
-    log_likelihood += rho * np.linalg.norm(beta2 - beta + u1)**2 / 2
-    log_likelihood += rho * np.linalg.norm(beta3 - beta + u2)**2 / 2
+    log_likelihood += rho * np.linalg.norm(beta2 - beta + u1) ** 2 / 2
+    log_likelihood += rho * np.linalg.norm(beta3 - beta + u2) ** 2 / 2
     return log_likelihood
 
 
 # Delta_J_numerical
-def Delta_J(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho, epsilon=1e-5):
+def Delta_J(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho, epsilon=1e-5):
     # 基于 log_likelihood 进行导数的数值计算
     grad = np.zeros_like(beta)
     for i in range(len(beta)):
@@ -156,10 +157,10 @@ def Delta_J(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho, epsilon=1e-5
         # grad[i] = (f_plus - f_minus) / (2 * epsilon)
         try:
             # print("beta_plus:", beta_plus)
-            f_plus = log_likelihood(beta_plus, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho)
+            f_plus = log_likelihood(beta_plus, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho)
             # print("f_plus:", f_plus)
             # print("beta_minus:", beta_minus)
-            f_minus = log_likelihood(beta_minus, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho)
+            f_minus = log_likelihood(beta_minus, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho)
             # print("f_minus:", f_minus)
             grad[i] = (f_plus - f_minus) / (2 * epsilon)
             # print("grad[i]:", grad[i])
@@ -169,12 +170,12 @@ def Delta_J(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho, epsilon=1e-5
 
 
 # Delta_J_analytic
-def Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho):
+def Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho):
     # 计算梯度的函数
     n = X_g.shape[0]
     # check_nan_inf(beta, 'beta')
     # X_beta = np.clip(X_g @ beta, -500, 500)
-    r_exp_x_beta = R_g @ np.exp(X_g @ beta)   # + 1e-8 防止除0
+    r_exp_x_beta = R_g @ np.exp(X_g @ beta)  # + 1e-8 防止除0
     if np.any(r_exp_x_beta == 0):
         print("Division by Zero")
         # sys.exit(1)
@@ -187,6 +188,7 @@ def Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho):
     gradient -= rho * (beta3 - beta + u2)
     return gradient
 
+
 # RuntimeWarning: overflow encountered in matmul
 #   gradient += X_g.T @ np.diag(np.exp(X_g @ beta)) @ R_g.T @ np.diag(1 / r_exp_x_beta) @ delta_g / N
 
@@ -197,7 +199,7 @@ def gradient_descent_adam(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho,
     v = np.zeros_like(beta)
     for i in range(max_iter):
         beta_old = beta.copy()
-        gradient = Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2,  N, rho)
+        gradient = Delta_J_analytic(beta, X_g, delta_g, R_g, beta2, beta3, u1, u2, N, rho)
 
         # 更新一阶矩估计和二阶矩估计
         m = a1 * m + (1 - a1) * gradient
@@ -225,10 +227,10 @@ def gradient_descent_adam_homo(beta, X, delta, R, beta3, u2, rho, eta=0.1, max_i
     for i in range(max_iter):
         beta_old = beta.copy()
         gradient = 0
-        for g in range(len(X)):   # 分组加总 gradient
+        for g in range(len(X)):  # 分组加总 gradient
             n_g = X[g].shape[0]
             gradient += (- np.dot(X[g].T, delta[g]) + np.dot(X[g].T @ np.diag(np.exp(np.dot(X[g], beta))), R[g].T).dot(
-                np.diag(1 / (R[g].dot(np.exp(np.dot(X[g], beta)))))).dot(delta[g]))/n_g
+                np.diag(1 / (R[g].dot(np.exp(np.dot(X[g], beta)))))).dot(delta[g])) / n_g
             gradient -= rho * (beta3 - beta + u2)
 
         # 更新一阶矩估计和二阶矩估计
@@ -257,8 +259,9 @@ def gradient_descent_adam_initial(beta, X_g, delta_g, R_g, beta3, u2, rho, eta=0
     v = np.zeros_like(beta)
     for i in range(max_iter):
         beta_old = beta.copy()
-        gradient = (- np.dot(X_g.T, delta_g) + np.dot(X_g.T @ np.diag(np.exp(np.dot(X_g, beta))), R_g.T).dot(np.diag(1 / (R_g.dot(
-            np.exp(np.dot(X_g, beta)))))).dot(delta_g))/n - rho * (beta3 - beta + u2)
+        gradient = (- np.dot(X_g.T, delta_g) + np.dot(X_g.T @ np.diag(np.exp(np.dot(X_g, beta))), R_g.T).dot(
+            np.diag(1 / (R_g.dot(
+                np.exp(np.dot(X_g, beta)))))).dot(delta_g)) / n - rho * (beta3 - beta + u2)
 
         # 更新一阶矩估计和二阶矩估计
         m = a1 * m + (1 - a1) * gradient
@@ -276,6 +279,7 @@ def gradient_descent_adam_initial(beta, X_g, delta_g, R_g, beta3, u2, rho, eta=0
             # print(f"Iteration {i}: beta_update = {beta}, Convergence reached by Adam")
             break
     return beta
+
 
 # RuntimeWarning: overflow encountered in exp  exp_X_beta = np.exp(np.dot(X_g, beta))
 # RuntimeWarning: overflow encountered in divide
@@ -301,7 +305,7 @@ def group_soft_threshold(x, lambd):
 
 def group_mcp_threshold_matrix(X, lamb=0.1, a=3):
     norm_ = np.linalg.norm(X, axis=0)
-    lambda_ = np.maximum(0, lamb - norm_/a)
+    lambda_ = np.maximum(0, lamb - norm_ / a)
     shrinkage_factor = np.maximum(0, 1 - lambda_ / norm_)
     shrinkage_factor = np.where(norm_ > 0, shrinkage_factor, np.zeros_like(shrinkage_factor))
     return X * shrinkage_factor
@@ -310,9 +314,9 @@ def group_mcp_threshold_matrix(X, lamb=0.1, a=3):
 def compute_Delta(X2, X1, is_relative=True):
     # 计算两个矩阵之间的变化量
     if is_relative:  # relative difference
-        return ((X2 - X1)**2).sum() / ((X1**2).sum() + 1e-4)
+        return ((X2 - X1) ** 2).sum() / ((X1 ** 2).sum() + 1e-4)
     else:  # absolute differentce (adjusted by the number of elements in array)
-        return ((X2 - X1)**2).sum() / np.prod(X2.shape)
+        return ((X2 - X1) ** 2).sum() / np.prod(X2.shape)
     # X1_squared = np.dot(X1, X1.T)
     # return np.linalg.norm(np.dot(X2, X2.T) - X1_squared)**2 / np.linalg.norm(X1_squared)**2
     # return np.linalg.norm(np.dot(X2, X2.T) - X1_squared, 'fro')**2 / np.linalg.norm(X1_squared, 'fro')**2
@@ -321,39 +325,86 @@ def compute_Delta(X2, X1, is_relative=True):
 def define_tree_structure(tree_structure="G5"):
     # 创建一个空的有向图
     tree = nx.DiGraph()
-    # 找到当前文件所在的目录
-    current_dir = os.path.dirname(__file__)
-    # 构建相对路径到 cox_code
-    project_root = os.path.join(current_dir, os.pardir)
+
     if tree_structure == "G5":
         # 添加节点
         tree.add_nodes_from(range(8))  # 假设有 K 个节点
         # 添加边，连接父子节点
         tree.add_edges_from([(7, 6), (7, 5),
-                             (6, 4), (6, 3),   (5, 2), (5, 1), (5, 0)])  # 假设节点 K 是根节点
-                    #       7
-                    #     /   \
-                    #    5      6
-                    #  / | \   / \
-                    # 0  1  2  3  4
-    elif tree_structure == "G36":
-        file_path = os.path.join(project_root, 'cox_code', 'Empirical', 'tree_index.pkl')
-        with open(file_path, "rb") as f:
-            tree = pickle.load(f)
+                             (6, 4), (6, 3), (5, 2), (5, 1), (5, 0)])  # 假设节点 K 是根节点
+        #       7
+        #     /   \
+        #    5      6
+        #  / | \   / \
+        # 0  1  2  3
+    elif tree_structure == "G4":
+        tree.add_nodes_from(range(7))
+        tree.add_edges_from([
+            (6, 4), (6, 5),
+            (4, 0), (4, 1), (5, 2), (5, 3)
+        ])
+
+    elif tree_structure == "G6":
+        tree.add_nodes_from(range(11))
+        tree.add_edges_from([
+            (10, 8), (10, 9),
+            (8, 6), (8, 7), (9, 4), (9, 5),
+            (6, 0), (6, 1), (7, 2), (7, 3)
+        ])
+
+    elif tree_structure == "G7":
+        tree.add_nodes_from(range(13))
+        tree.add_edges_from([
+            (12, 11), (12, 10),
+            (11, 7), (11, 8), (10, 9), (10, 6),
+            (7, 0), (7, 1), (8, 2), (8, 3), (9, 4), (9, 5)
+        ])
+
+    elif tree_structure == "G8":
+        tree.add_nodes_from(range(15))
+        tree.add_edges_from([(14, 12), (14, 13),
+                             (12, 8), (12, 9), (13, 10), (13, 11),
+                             (8, 0), (8, 1), (9, 2), (9, 3), (10, 4), (10, 5), (11, 6), (11, 7)])
+
+    elif tree_structure == "G9":
+        tree.add_nodes_from(range(16))
+        tree.add_edges_from([(15, 13), (15, 14),
+                             (13, 9), (13, 10), (14, 11), (14, 12),
+                             (9, 0), (9, 1), (9, 2), (10, 3), (10, 4), (11, 5), (11, 6), (12, 7), (12, 8)])
+
     elif tree_structure == "G16":
-        file_path = os.path.join(project_root, 'cox_code', 'Empirical', 'tree_index_G16.pkl')
-        with open(file_path, "rb") as f:
-            tree = pickle.load(f)
-    elif tree_structure == "G11":
-        file_path = os.path.join(project_root, 'cox_code', 'Empirical', 'tree_index_G11.pkl')
-        with open(file_path, "rb") as f:
-            tree = pickle.load(f)
+        tree.add_nodes_from(range(31))
+        tree.add_edges_from([
+            (30, 28), (30, 29),
+            (28, 24), (28, 25), (29, 26), (29, 27),
+            (24, 16), (24, 17), (25, 18), (25, 19), (26, 20), (26, 21), (27, 22), (27, 23),
+            (16, 0), (16, 1), (17, 2), (17, 3), (18, 4), (18, 5), (19, 6), (19, 7), (20, 8), (20, 9), (21, 10), (21, 11), (22, 12), (22, 13), (23, 14), (23, 15)
+        ])
+
     return tree
+
+    # elif tree_structure == "G11":
+    #     file_path = os.path.join(project_root, 'cox_code', 'Empirical', 'tree_index_G11.pkl')
+    #     with open(file_path, "rb") as f:
+    #         tree = pickle.load(f)
+
+    #     tree.add_nodes_from(range(18))
+    #     tree.add_edges_from(
+    #         [(17, 11), (17, 12), (17, 13), (17, 14), (17, 15), (17, 16), (11, 0), (12, 1), (12, 2), (12, 3), (13, 4),
+    #          (13, 5), (14, 6), (14, 7), (15, 8), (15, 9), (16, 10)]
+    #     )
+
+    # elif tree_structure == "G16":
+    #     file_path = os.path.join(project_root, 'cox_code', 'Empirical', 'tree_index_G16.pkl')
+    #     with open(file_path, "rb") as f:
+    #         tree = pickle.load(f)
+    # [(23, 16), (23, 17), (23, 18), (23, 19), (23, 20), (23, 21), (23, 22), (16, 0), (17, 1), (17, 2), (17, 3), (17, 4),
+    #  (18, 5), (19, 6), (19, 7), (19, 8), (19, 9), (20, 10), (20, 11), (20, 12), (21, 13), (21, 14), (22, 15)]
 
 
 def internal_nodes(tree):
     # 获取有出边的节点，即内部节点
-    return [node for node in tree.nodes() if tree.out_degree(node) > 0]   # 包含根节点
+    return [node for node in tree.nodes() if tree.out_degree(node) > 0]  # 包含根节点
 
 
 def leaf_nodes(tree):
@@ -379,7 +430,7 @@ def leaf_parents(tree):
     for leaf in leaves:
         parents = list(tree.predecessors(leaf))
         parent_nodes.update(parents)
-    return list(parent_nodes)   # 所有叶节点的父节点（无祖节点）
+    return list(parent_nodes)  # 所有叶节点的父节点（无祖节点）
 
 
 def get_leaf_and_ancestors(tree, leaf):
@@ -396,7 +447,7 @@ def get_D(tree):
     D = np.empty(shape=(G, K))
     for leaf in leaves:
         vector = np.zeros(K)
-        ancestors = get_leaf_and_ancestors(tree, leaf)   # 对应叶节点及其祖父节点
+        ancestors = get_leaf_and_ancestors(tree, leaf)  # 对应叶节点及其祖父节点
         vector[ancestors] = 1
         D[leaf] = vector
     return D
@@ -407,7 +458,7 @@ def get_gamma(B, tree):
     G = len(B)
     p = B.shape[1]
     K = G + len([node for node in tree.nodes() if tree.out_degree(node) > 0])  # internal_nodes(tree)
-    Gamma = np.vstack([B, np.zeros((K-G, p))])
+    Gamma = np.vstack([B, np.zeros((K - G, p))])
     internal_nodes = [node for node in tree.nodes() if tree.out_degree(node) > 0]
     for node in internal_nodes:
         children = list(tree.successors(node))
@@ -522,7 +573,7 @@ def generate_latex_table1(results):
                 mean_row.append(f"\\multirow{{8}}{{*}}{{{example}}} & \\multirow{{8}}{{*}}{{{correlation}}} & Proposed")
                 std_row.append(" &  & ")
             elif method == 'heter':
-                mean_row.append(f" &  & Heter")
+                mean_row.append(f" &  & Hetero")
                 std_row.append(" &  & ")
             elif method == 'homo':
                 mean_row.append(f" &  & Homo")
@@ -582,7 +633,7 @@ def generate_latex_table0(results):
 # 保存结果到 CSV 文件
 def save_to_csv(data, filename='results.csv'):
     records = []
-    for (k1, k2), methods in data.items():    # 将字典转换为 DataFrame
+    for (k1, k2), methods in data.items():  # 将字典转换为 DataFrame
         for method, metrics in methods.items():
             record = {'Key1': k1, 'Key2': k2, 'Method': method}
             record.update(metrics)
@@ -662,4 +713,3 @@ def load_from_csv(filename='results.csv'):
 
 # leaf_nodes = leaf_nodes(tree)
 # print(leaf_nodes)
-

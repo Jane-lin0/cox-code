@@ -47,15 +47,15 @@ train_y = np.array([(delta_train[i], Y_train[i]) for i in range(N_train[0])], dt
 test_y = np.array([(delta_test[i], Y_test[i]) for i in range(N_test[0])], dtype=[('delta', 'bool'), ('time', 'float')])
 
 # 拟合 CoxPHSurvivalAnalysis
-coxph = CoxPHSurvivalAnalysis(alpha=0.1, n_iter=300)
+coxph = CoxPHSurvivalAnalysis()
 coxph.fit(X_train, train_y)
-coef_sksurv = coxph.coef_
+# coef_sksurv = coxph.coef_
 
 coef_pred = beta_estimation(X_train, delta_train, R_train, lambda1=0.1)
 
 results = {}
 results['pred'] = evaluate_coef(coef_pred, B, test_data)
-results['sksurv'] = evaluate_coef(coef_sksurv, B, test_data)
+results['sksurv'] = evaluate_coef(coxph.coef_, B, test_data)
 print(results)
 
 # coxph_score_train = coxph.score(X_train, train_y)

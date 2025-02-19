@@ -4,7 +4,7 @@ import numpy as np
 
 from data_generation import get_R_matrix, generate_simulated_data
 from evaluation_indicators import evaluate_coef_test
-from related_functions import define_tree_structure, compute_Delta, internal_nodes, all_descendants, \
+from related_functions import define_tree_structure, compute_Delta, internal_nodes, children, all_descendants, \
     group_soft_threshold, gradient_descent_adam, get_coef_estimation, refit, get_D, get_gamma
 
 
@@ -54,7 +54,7 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, tree_structure=
         Gamma1_old = Gamma1.copy()
         if m > 10:
             for u in internal_nodes(tree):
-                child_u = all_descendants(tree, u)
+                child_u = children(tree, u)
                 if False:
                     Gamma2_child = np.array([Gamma2[v] for v in child_u])
                     W1_child = np.array([W1[v] for v in child_u])
@@ -73,6 +73,7 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, tree_structure=
                     for v in child_u:
                         # 更新 lambda2_u
                         lam = np.sqrt(p) * lambda2
+                        # lam = lambda2 / np.sqrt(len(child_u))
                         theta = np.linalg.norm(Gamma2[v] + W1[v])
                         if theta > a * lam:
                             lambda2_u = 0
@@ -147,10 +148,10 @@ if __name__ == "__main__":
     N_train = np.array([200]*G)
     N_test = np.array([500] * G)
     B_type = 2
-    Correlation_type = "band1"
+    Correlation_type = "Band1"
 
     train_data, test_data, B = generate_simulated_data(p, N_train, N_test=N_test, censoring_rate=0.25,
-                                                       B_type=B_type, Correlation_type=Correlation_type, seed=0)
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=12)
     X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
 
     # parameter_ranges = {'lambda1': np.linspace(0.01, 0.3, 8),
@@ -158,7 +159,9 @@ if __name__ == "__main__":
     # lambda1_proposed, lambda2_proposed, B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R,
     #                                                                  rho=1, eta=0.1, method='proposed', tree_structure=tree_structure)
 
-    B_proposed = ADMM_optimize(X, delta, R, lambda1=0.1, lambda2=0.2, rho=1, eta=0.1, tree_structure=tree_structure)
+    B_proposed = ADMM_optimize(X, delta, R, lambda1=0.2, lambda2=0.11, rho=1, eta=0.1,
+                                       tree_structure=tree_structure, B_init=B)
+
     results = evaluate_coef_test(B_proposed, B, test_data)
     print(results)
 

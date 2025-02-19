@@ -23,7 +23,7 @@ def calculate_mbic_beta(beta, X, delta, R):
             S_matrix[i] = 0
     params_num = np.sum(S_matrix)
     # mbic = - log_likelihood + np.log(np.log(params_num)) * np.log(N)    # S_hat 变为 np.log(params_num)
-    mbic = - log_likelihood + params_num * 2
+    mbic = (- log_likelihood + params_num * 2) / N
     return mbic
 
 
@@ -33,7 +33,7 @@ def grid_search_hyperparameters_beta(parameter_ranges, X, delta, R):
     mbic_records = {}
 
     for lambda1 in parameter_ranges['lambda1']:
-        beta_hat = beta_estimation(X_g, delta_g, Y_g, lambda1=lambda1)
+        beta_hat = beta_estimation(X_g, delta_g, R_g, lambda1=lambda1)
         mbic = calculate_mbic_beta(beta_hat, X, delta, R)
         # 记录每个 lambda1, lambda2 对应的 mbic
         mbic_records[lambda1] = mbic
@@ -43,25 +43,25 @@ def grid_search_hyperparameters_beta(parameter_ranges, X, delta, R):
             best_mbic = mbic
             best_params = {'lambda1': lambda1, 'mbic': best_mbic}
 
-    # 提取 lambda1 和对应的 mbic 值
-    lambda1_values = list(mbic_records.keys())
-    mbic_values = list(mbic_records.values())
-
-    # 创建折线图
-    plt.figure(figsize=(10, 6))
-    plt.plot(lambda1_values, mbic_values, marker='o', linestyle='-', color='b')
-
-    # 添加标题和标签
-    plt.title(f"minimum mBIC: lambda1={best_params['lambda1']:.2f}, mBIC={best_params['mbic']:.1f}")
-    plt.xlabel('lambda1')
-    plt.ylabel('mBIC')
-
-    # 显示网格
-    plt.grid(True)
-    # 显示图表
-    plt.show()
-
     return best_params
+
+    # # 提取 lambda1 和对应的 mbic 值
+    # lambda1_values = list(mbic_records.keys())
+    # mbic_values = list(mbic_records.values())
+    #
+    # # 创建折线图
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(lambda1_values, mbic_values, marker='o', linestyle='-', color='b')
+    #
+    # # 添加标题和标签
+    # plt.title(f"minimum mBIC: lambda1={best_params['lambda1']:.2f}, mBIC={best_params['mbic']:.1f}")
+    # plt.xlabel('lambda1')
+    # plt.ylabel('mBIC')
+    #
+    # # 显示网格
+    # plt.grid(True)
+    # # 显示图表
+    # plt.show()
 
 
 start_time = time.time()
@@ -76,10 +76,11 @@ X_g, Y_g, delta_g, R_g = generate_simulated_data_test(N_class, p, beta_true, see
 X_g_test, Y_g_test, delta_g_test, R_g_test = generate_simulated_data_test(N_test, p, beta_true)
 
 # 使用 sksurv 拟合 Cox 比例风险模型
-sksurv_coxph = CoxPHSurvivalAnalysis()
 y = np.empty(dtype=[('col_event', bool), ('col_time', np.float64)], shape=X_g.shape[0])
 y['col_event'] = delta_g
 y['col_time'] = Y_g
+
+sksurv_coxph = CoxPHSurvivalAnalysis()
 sksurv_coxph.fit(X_g, y)
 coef_sksurv = sksurv_coxph.coef_
 
