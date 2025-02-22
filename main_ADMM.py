@@ -120,11 +120,14 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, tree_structure=
         epsilon_dual4 = compute_Delta(Gamma1, Gamma1_old, is_relative=False)
         epsilon_dual5 = compute_Delta(Gamma2, Gamma2_old, is_relative=False)
         epsilons_dual = [epsilon_dual1, epsilon_dual2, epsilon_dual3, epsilon_dual4, epsilon_dual5]
+        # epsilons_dual = [epsilon_dual1, epsilon_dual2, epsilon_dual3]
+
 
         epsilon_primal1 = compute_Delta(B1, B2, is_relative=False)
         epsilon_primal2 = compute_Delta(B1, B3, is_relative=False)
         epsilon_primal3 = compute_Delta(Gamma1, Gamma2, is_relative=False)
         epsilons_primal = [epsilon_primal1, epsilon_primal2, epsilon_primal3]
+        # epsilons_primal = [epsilon_primal1, epsilon_primal2]
 
         # 检查收敛条件
         if max(epsilons_dual) < delta_dual and max(epsilons_primal) < delta_primal:

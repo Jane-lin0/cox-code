@@ -16,26 +16,26 @@ from main_ADMM import ADMM_optimize
 将前一组的超参数选择结果（B_hat）设为下一组的初值'''
 
 
-def grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=0.5, eta=0.1, method='proposed',
+def grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1, method='proposed',
                                    B_init=None):
     best_mbic = float('inf')
     best_params = {}
-    # mbic_records = {}
+    mbic_records = {}
     if B_init is None:
-        B_init = no_tree_model(X, delta, R, lambda1=0.1, rho=rho, eta=eta)  # 初始值
+        B_init = None
+        # B_init = no_tree_model(X, delta, R, lambda1=0.1, rho=rho, eta=eta)  # 初始值
     else:
         B_init = B_init.copy()
-    # B_init = None
 
     if method == 'proposed':
         for lambda1 in parameter_ranges['lambda1']:
             for lambda2 in parameter_ranges['lambda2']:
                 B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=rho, eta=eta,
                                       tree_structure=tree_structure, B_init=B_init)
-                # B_init = B_hat.copy()
+                B_init = B_hat.copy()
                 mbic = calculate_mbic(B_hat, X, delta, R)
                 # 记录每个 lambda1, lambda2 对应的 mbic
-                # mbic_records[(lambda1, lambda2)] = mbic
+                mbic_records[(lambda1, lambda2)] = mbic
                 # 检查是否找到了更好的参数
                 if mbic < best_mbic:
                     best_mbic = mbic.copy()
@@ -43,6 +43,7 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure
                     B_best = B_hat.copy()
         # B_best = ADMM_optimize(X, delta, R, lambda1=best_params['lambda1'], lambda2=best_params['lambda2'],
         #                        rho=rho, eta=eta, tree_structure=tree_structure)
+        # hyperparameter_figure_v1(mbic_records, best_params)
 
     elif method == 'heter':
         for lambda1 in parameter_ranges['lambda1']:
@@ -90,10 +91,10 @@ def hyperparameter_figure_v1(mbic_records, best_params):
     fig_height = cell_height * mbic_matrix.shape[0]
     plt.figure(figsize=(fig_width, fig_height))
     sns.heatmap(mbic_matrix, xticklabels=[f"{x:.2f}" for x in lambda2_values], yticklabels=[f"{x:.2f}" for x in lambda1_values],
-                annot=True, fmt=".0f", cmap="YlGnBu", cbar_kws={"label": "mBIC"})
+                annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={"label": "mBIC"})
 
     # 添加标题和标签
-    plt.title(f"lambda1={best_params['lambda1']:.2f}, lambda2={best_params['lambda2']:.2f}, min mBIC={best_params['mbic']:.0f}")
+    plt.title(f"lambda1={best_params['lambda1']:.2f}, lambda2={best_params['lambda2']:.2f}, min mBIC={best_params['mbic']:.2f}")
     plt.xlabel('lambda2')
     plt.ylabel('lambda1')
 
