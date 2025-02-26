@@ -44,9 +44,9 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
         beta_significance = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
         B = np.tile(beta_significance, (G, 1))  # 真实 G = 1
     elif B_type == 2:
-        beta_significance1 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
+        beta_significance1 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)])
 
-        beta_significance2 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
+        beta_significance2 = np.hstack([np.array([-0.4 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
         if G == 5:
             B_G1 = np.tile(beta_significance1, (3, 1))  # 真实 G = 2
             B_G2 = np.tile(beta_significance2, (2, 1))
