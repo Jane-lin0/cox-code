@@ -345,11 +345,10 @@ def define_tree_structure(tree_structure="G5"):
         ])
 
     elif tree_structure == "G6":
-        tree.add_nodes_from(range(11))
+        tree.add_nodes_from(range(10))
         tree.add_edges_from([
-            (10, 8), (10, 9),
-            (8, 6), (8, 7), (9, 4), (9, 5),
-            (6, 0), (6, 1), (7, 2), (7, 3)
+            (9, 6), (9, 7), (9, 8),
+            (6, 0), (6, 1), (7, 2), (7, 3), (8, 4), (8, 5)
         ])
 
     elif tree_structure == "G7":
