@@ -1,11 +1,15 @@
 import pickle
+import random
+
 import pandas as pd
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 from data_generation import get_R_matrix
 
 
-def data_split(region_list, test_rate):
+def data_split(region_list, test_rate, random_seed=False):
+    if random_seed:
+        random.seed(42)
 
     train_data = dict(X=[], Y=[], delta=[], R=[])
     test_data = dict(X=[], Y=[], delta=[], R=[])
@@ -21,13 +25,22 @@ def data_split(region_list, test_rate):
                           'Intercept', 'INCOME1000元以下', 'MARITALSTATUS丧偶'], inplace=True)  # 删除强相关变量
 
         N_train_g = int(len(Y_g) * (1 - test_rate))
-        train_data['X'].append(X_g.iloc[:N_train_g, :].values)
-        test_data['X'].append(X_g.iloc[N_train_g:, :].values)
+        # 生成随机索引并打乱
+        indices = list(range(len(Y_g)))
+        random.shuffle(indices)
+        # 使用随机索引选取训练测试数据
+        train_indices = indices[:N_train_g]
+        test_indices = indices[N_train_g:]
 
-        train_data['Y'].append(Y_g[:N_train_g].values.flatten())
-        test_data['Y'].append(Y_g[N_train_g:].values.flatten())
-        train_data['delta'].append(delta_g[:N_train_g].values.flatten())
-        test_data['delta'].append(delta_g[N_train_g:].values.flatten())
+        # 更新为随机选取的方式
+        train_data['X'].append(X_g.iloc[train_indices, :].values)
+        test_data['X'].append(X_g.iloc[test_indices, :].values)
+
+        train_data['Y'].append(Y_g.iloc[train_indices].values.flatten())
+        test_data['Y'].append(Y_g.iloc[test_indices].values.flatten())
+
+        train_data['delta'].append(delta_g.iloc[train_indices].values.flatten())
+        test_data['delta'].append(delta_g.iloc[test_indices].values.flatten())
 
     G = len(region_list)
     train_data['R'] = [get_R_matrix(train_data['Y'][g]) for g in range(G)]
@@ -36,11 +49,20 @@ def data_split(region_list, test_rate):
     return train_data, test_data
 
 
+    # N_train_g = int(len(Y_g) * (1 - test_rate))
+    # train_data['X'].append(X_g.iloc[:N_train_g, :].values)
+    # test_data['X'].append(X_g.iloc[N_train_g:, :].values)
+    # train_data['Y'].append(Y_g[:N_train_g].values.flatten())
+    # test_data['Y'].append(Y_g[N_train_g:].values.flatten())
+    # train_data['delta'].append(delta_g[:N_train_g].values.flatten())
+    # test_data['delta'].append(delta_g[N_train_g:].values.flatten())
+
 # data = {'train_data': train_data,
 #         'test_data': test_data}
 #
 # with open(f"data_G{G}.pkl", 'wb') as f:
 #     pickle.dump(data, f)
+
 
     # 检查多重共线性
     # print(f"\n{region}:\n")
