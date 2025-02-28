@@ -12,9 +12,9 @@ def main():
                    "陕西", "甘肃", "新疆"]
     tree_structure = "G10"
 
-    method = 'proposed'
-    repeats = 5
-    test_rates = [0.1, 0.2, 0.3, 0.4, 0.5]
+    method = 'notree'
+    repeats = 1
+    test_rates = [0.1]
 
     results = {}
     for test_rate in test_rates:
@@ -48,8 +48,10 @@ def main():
             except Exception as e:
                 print(f"Key {key} generated an exception: {e}", file=sys.stderr)
 
-        with open('final_results.json', 'w') as f:
+        with open(f'{method}_results.json', 'w') as f:
             json.dump(results, f, indent=2)
+
+    return results
 
 
 if __name__ == "__main__":

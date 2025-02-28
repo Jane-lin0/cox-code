@@ -10,6 +10,7 @@ from main_ADMM import ADMM_optimize
 
 def compute_single_trial(region_list, test_rate, repeat_id, tree_structure, method):
     """执行单个试验（test_rate+repeat_id组合）的计算"""
+    print(f"test_rate={test_rate}, repeat_id={repeat_id}")
     try:
         train_data, test_data = data_split(region_list, test_rate, random_seed=repeat_id)
         X, delta, R = train_data['X'], train_data['delta'], train_data['R']
@@ -19,17 +20,21 @@ def compute_single_trial(region_list, test_rate, repeat_id, tree_structure, meth
         B_best = None
         B_init = None
 
-        for lambda1 in [0.05, 0.1, 0.2]:
-            for lambda2 in [0.01, 0.05]:
+        for lambda1 in [0.1, 0.2]:
+            for lambda2 in [0.05]:
+                print(f"lambda1={lambda1}, lambda2={lambda2}")
                 if method == 'proposed':
                     B_hat = ADMM_optimize(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, tree_structure=tree_structure,
-                                          B_init=B_init)
+                                          B_init=B_init, max_iter_m=100, max_iter_l=50)
                 elif method == 'notree':
-                    B_hat = no_tree_model(X, delta, R, lambda1=lambda1, rho=1, eta=0.1, B_init=B_init)
+                    B_hat = no_tree_model(X, delta, R, lambda1=lambda1, rho=1, eta=0.1, B_init=B_init,
+                                          M=100, L=50)
                 elif method == 'hetero':
-                    B_hat = heterogeneity_model(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=1, eta=0.1, B_init=B_init)
+                    B_hat = heterogeneity_model(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=1, eta=0.1,
+                                                B_init=B_init, max_iter_m=100, max_iter_l=50)
                 elif method == 'homo':
-                    B_hat = homogeneity_model(X, delta, R, lambda1=lambda1, rho=1, eta=0.1, B_init=B_init)
+                    B_hat = homogeneity_model(X, delta, R, lambda1=lambda1, rho=1, eta=0.1, B_init=B_init,
+                                              M=100, L=50)
 
                 B_init = B_hat.copy()
                 current_mbic = calculate_mbic(B_hat, X, delta, R)
@@ -46,11 +51,12 @@ def compute_single_trial(region_list, test_rate, repeat_id, tree_structure, meth
         avg_cindex = np.mean(c_index)
         print(f"test_rate={test_rate}, best_params={best_params}")
 
-        return (test_rate, repeat_id, avg_cindex, label, B_best)
+        return (test_rate, repeat_id, avg_cindex, label.tolist(), B_best.tolist())
 
     except Exception as e:
-        # 捕获异常并返回错误标记
-        return (test_rate, repeat_id, None, None, f"Error: {str(e)}")
+        # 打印异常，并返回None
+        print(f"Error: {str(e)}")
+        return (test_rate, repeat_id, None, None, None)
 
 
 
