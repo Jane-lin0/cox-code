@@ -8,13 +8,16 @@ from Empirical.renrendai.process_function import compute_single_trial
 
 def main():
     sys.setrecursionlimit(1 << 25)
-    region_list = ["辽宁", "黑龙江", "湖北", "湖南", "天津", "福建", "海南",
-                   "陕西", "甘肃", "新疆"]
-    tree_structure = "G10"
+    region_list = ["北京", "河北", "山东", "江苏", "上海", "浙江", "福建", "广东"]
+        # ['北京', '河北', '山东', '江苏', '上海', '浙江', '福建', '广东',
+        #            '山西', '河南', '安徽', '湖北', '湖南', '江西',
+        #            '陕西', '四川', '云南', '广西',
+        #            '辽宁', '吉林', '黑龙江']
+    tree_structure = "G8"
 
-    method = 'notree'
-    repeats = 1
-    test_rates = [0.1]
+    method = 'proposed'
+    repeats = 10
+    test_rates = [0.1, 0.2, 0.3, 0.4, 0.5]
 
     results = {}
     for test_rate in test_rates:
@@ -56,7 +59,7 @@ def main():
 
 if __name__ == "__main__":
     start_time = time.time()
-    main()
+    results = main()
 
     running_time = time.time() - start_time
     print(f"\nRunning time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f} hours)")

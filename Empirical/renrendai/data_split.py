@@ -9,20 +9,22 @@ from data_generation import get_R_matrix
 
 def data_split(region_list, test_rate, random_seed=None):
     if random_seed is not None:
-        random.seed(random_seed * 6)
+        random.seed(random_seed)
 
     train_data = dict(X=[], Y=[], delta=[], R=[])
     test_data = dict(X=[], Y=[], delta=[], R=[])
 
     for region in region_list:
-        X_g = pd.read_excel(f"./censor75/data_{region}.xlsx", sheet_name="Z")
-        Y_g = pd.read_excel(f"./censor75/data_{region}.xlsx", sheet_name="T", header=None)
-        delta_g = pd.read_excel(f"./censor75/data_{region}.xlsx", sheet_name="delta", header=None)
+        data = pd.read_excel(f"./censor67/data_{region}.xlsx", header=0)
+        # columns = data.columns
+        Y_g = data['survival_time']
+        delta_g =data['delta']
+        X_g = data.drop(columns=['survival_time', 'delta'])  # 所有非 Y/delta 的列
 
-        X_g['Success_loan_rate'] = X_g['SUCCESSFULNUM'] / X_g['LOANNUMBERS']
-        X_g['Paidoff_rate'] = X_g['PAIDOFFTIMES'] / X_g['LOANNUMBERS']
-        X_g.drop(columns=['SUCCESSFULNUM', 'LOANNUMBERS', 'PAIDOFFTIMES',
-                          'Intercept', 'INCOME1000元以下', 'MARITALSTATUS丧偶'], inplace=True)  # 删除强相关变量
+        # X_g['Success_loan_rate'] = X_g['SUCCESSFULNUM'] / X_g['LOANNUMBERS']
+        # X_g['Paidoff_rate'] = X_g['PAIDOFFTIMES'] / X_g['LOANNUMBERS']
+        # X_g.drop(columns=['SUCCESSFULNUM', 'LOANNUMBERS', 'PAIDOFFTIMES',
+        #                   'Intercept', 'INCOME1000元以下', 'MARITALSTATUS丧偶'], inplace=True)  # 删除强相关变量
 
         N_train_g = int(len(Y_g) * (1 - test_rate))
         # 生成随机索引并打乱
@@ -48,6 +50,9 @@ def data_split(region_list, test_rate, random_seed=None):
 
     return train_data, test_data
 
+
+if __name__ == "__main__":
+    train_data, test_data = data_split(['山西'], test_rate=0.2, random_seed=1)
 
     # N_train_g = int(len(Y_g) * (1 - test_rate))
     # train_data['X'].append(X_g.iloc[:N_train_g, :].values)

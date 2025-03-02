@@ -70,6 +70,10 @@ def C_index(beta, X_ord, delta_ord, Y_ord, epsilon=1e-10):
                 cnt1 += 1
                 cnt2 += (risk[i] <= risk[j]) or (Y_ord[i] == Y_ord[j])
 
+    # 处理无有效事件对的情况
+    if cnt1 == 0:
+        return 0.0
+
     return cnt2 / cnt1
 
 
