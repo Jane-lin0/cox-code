@@ -1,21 +1,22 @@
+import multiprocessing
 import time
 import numpy as np
 import concurrent.futures
-from draft_functions import simulate_and_record, simulation_until_converges
+from draft_functions import simulate_and_record
 from related_functions import save_to_csv, get_mean_std, generate_latex_table1
 
 
 def run_simulations(repeats):  # [1, 2, 3, 4]   # "Band1", "Band2", "CS(0.2)", "CS(0.4)", "AR(0.3)", "AR(0.7)"
-    combinations = [(B_type, Correlation_type) for B_type in [2]
+    combinations = [(B_type, Correlation_type) for B_type in [1]
                     for Correlation_type in ["Band1"]]
-    tasks = [(B_type, Correlation_type, repeat_id) for B_type, Correlation_type in combinations
-             for repeat_id in range(repeats)]
+    tasks = [(B_type, Correlation_type, repeat_id) for B_type, Correlation_type in combinations for repeat_id in range(repeats)]
     results = {}
 
     # 使用 ProcessPoolExecutor 并行处理任务
     with concurrent.futures.ProcessPoolExecutor() as executor:
         future_to_task = {
-            executor.submit(simulation_until_converges, B_type, Correlation_type, repeat_id): (B_type, Correlation_type, repeat_id)
+            executor.submit(simulate_and_record, B_type, Correlation_type, repeat_id):
+                (B_type, Correlation_type, repeat_id)
             for B_type, Correlation_type, repeat_id in tasks
         }
 

@@ -541,7 +541,7 @@ def generate_latex_table(results):
             elif method == 'homo':
                 row.append(f" &  & Homo")
             else:
-                row.append(" &  & Notree")
+                row.append(" &  & Single")
 
             for metric in ['TPR', 'FPR', 'SSE', 'Cindex', 'RI', 'ARI', 'G']:
                 mean = result[method][metric]['mean']
@@ -589,7 +589,7 @@ def generate_latex_table1(results):
                 mean_row.append(f" &  & Homo")
                 std_row.append(" &  & ")
             else:
-                mean_row.append(" &  & Notree")
+                mean_row.append(" &  & Single")
                 std_row.append(" &  & ")
 
             for metric in ['TPR', 'FPR', 'SSE', 'Cindex', 'RI', 'ARI', 'G']:
@@ -667,6 +667,8 @@ def load_from_csv(filename='results.csv'):
         results[key][method] = metrics
     return results
 # results = load_from_csv()
+
+
 
 
 # def get_S_hat(B):

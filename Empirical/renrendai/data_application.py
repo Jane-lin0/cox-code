@@ -28,7 +28,7 @@ northeast_economy = ["辽宁", "吉林", "黑龙江"]
 tree_structure = "G8"
 region_list = east_economy
 
-test_rate = 0.2
+test_rate = [0.1, 0.2, 0.3, 0.4, 0.5]
 repeats = 10
 results = {'cindex': [],
            'label': [],
@@ -42,13 +42,13 @@ for repeat_id in range(repeats):
     best_mbic = float('inf')
     best_params = {}
     B_init = None
-    for lambda1 in [0.05, 0.1, 0.2]:
-        for lambda2 in [0.05, 0.1, 0.15]:
-            B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=1, eta=0.1,
-                                  tree_structure=tree_structure, B_init=B_init)
+    for lambda1 in [0.01, 0.05, 0.1]:     # [0.05, 0.1, 0.2]:
+        for lambda2 in [0.01, 0.05, 0.1]:    # [0.05, 0.1, 0.15]
+            # B_hat = ADMM_optimize(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=1, eta=0.1,
+            #                       tree_structure=tree_structure, B_init=B_init)
             # B_hat = heterogeneity_model(X, delta, R, lambda1=lambda1, lambda2=lambda2, rho=1, eta=0.1, B_init=B_init)
             # B_hat = homogeneity_model(X, delta, R, lambda1=lambda1, rho=1, eta=0.1, B_init=B_init)
-            # B_hat = no_tree_model(X, delta, R, lambda1=lambda1, rho=1, eta=0.1, B_init=B_init)
+            B_hat = no_tree_model(X, delta, R, lambda1=lambda1, rho=1, eta=0.1, B_init=B_init)
             B_init = B_hat.copy()
 
             current_mbic = calculate_mbic(B_hat, X, delta, R)
@@ -57,14 +57,14 @@ for repeat_id in range(repeats):
                 best_params = (lambda1, lambda2, round(best_mbic, 2))
                 B_best = B_hat.copy()
 
-    label = grouping_labels(B_best)
+    # label = grouping_labels(B_best)
     X_test, Y_test, delta_test = test_data['X'], test_data['Y'], test_data['delta']
     c_index = [C_index(B_best[g], X_test[g], delta_test[g], Y_test[g]) for g in range(G)]
     avg_cindex = np.mean(c_index)
     results['cindex'].append(avg_cindex)
     results['label'].append(label)
     results['B_hat'].append(B_best)
-    print(f"best params={best_params}:\n c index={avg_cindex:.2f}, label={label}")
+    print(f"best params={best_params}:\n c index={avg_cindex:.2f}") # , label={label}
 
 running_time = time.time() - start_time
 print(f"running time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f} hours)")

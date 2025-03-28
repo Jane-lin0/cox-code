@@ -73,36 +73,36 @@ def grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure
     return B_best
 
 
-def hyperparameter_figure_v1(mbic_records, best_params):
-    # 提取 lambda1 和 lambda2 的值
-    lambda1_values = sorted(list(set(key[0] for key in mbic_records.keys())))
-    lambda2_values = sorted(list(set(key[1] for key in mbic_records.keys())))
-
-    # 创建 mBIC 值的矩阵
-    mbic_matrix = np.zeros((len(lambda1_values), len(lambda2_values)))
-    for i, lambda1 in enumerate(lambda1_values):
-        for j, lambda2 in enumerate(lambda2_values):
-            mbic_matrix[i, j] = mbic_records.get((lambda1, lambda2), np.nan)
-
-    # 可视化, 自动化调整图大小
-    cell_width = 0.6  # 每个单元格的尺寸
-    cell_height = 0.4
-    fig_width = cell_width * mbic_matrix.shape[1]
-    fig_height = cell_height * mbic_matrix.shape[0]
-    plt.figure(figsize=(fig_width, fig_height))
-    sns.heatmap(mbic_matrix, xticklabels=[f"{x:.2f}" for x in lambda2_values], yticklabels=[f"{x:.2f}" for x in lambda1_values],
-                annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={"label": "mBIC"})
-
-    # 添加标题和标签
-    plt.title(f"lambda1={best_params['lambda1']:.2f}, lambda2={best_params['lambda2']:.2f}, min mBIC={best_params['mbic']:.2f}")
-    plt.xlabel('lambda2')
-    plt.ylabel('lambda1')
-
-    # 保存图形到指定路径
-    desktop_path = os.path.join(r"C:\Users\janline\Desktop\lambda")
-    file_path = os.path.join(desktop_path, f"mBIC{best_params['mbic']:.0f}_lambda1_{best_params['lambda1']:.2f}.png")
-    plt.savefig(file_path, dpi=300, bbox_inches='tight')
-    plt.show()
+# def hyperparameter_figure_v1(mbic_records, best_params):
+#     # 提取 lambda1 和 lambda2 的值
+#     lambda1_values = sorted(list(set(key[0] for key in mbic_records.keys())))
+#     lambda2_values = sorted(list(set(key[1] for key in mbic_records.keys())))
+#
+#     # 创建 mBIC 值的矩阵
+#     mbic_matrix = np.zeros((len(lambda1_values), len(lambda2_values)))
+#     for i, lambda1 in enumerate(lambda1_values):
+#         for j, lambda2 in enumerate(lambda2_values):
+#             mbic_matrix[i, j] = mbic_records.get((lambda1, lambda2), np.nan)
+#
+#     # 可视化, 自动化调整图大小
+#     cell_width = 0.6  # 每个单元格的尺寸
+#     cell_height = 0.4
+#     fig_width = cell_width * mbic_matrix.shape[1]
+#     fig_height = cell_height * mbic_matrix.shape[0]
+#     plt.figure(figsize=(fig_width, fig_height))
+#     sns.heatmap(mbic_matrix, xticklabels=[f"{x:.2f}" for x in lambda2_values], yticklabels=[f"{x:.2f}" for x in lambda1_values],
+#                 annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={"label": "mBIC"})
+#
+#     # 添加标题和标签
+#     plt.title(f"lambda1={best_params['lambda1']:.2f}, lambda2={best_params['lambda2']:.2f}, min mBIC={best_params['mbic']:.2f}")
+#     plt.xlabel('lambda2')
+#     plt.ylabel('lambda1')
+#
+#     # 保存图形到指定路径
+#     desktop_path = os.path.join(r"C:\Users\janline\Desktop\lambda")
+#     file_path = os.path.join(desktop_path, f"mBIC{best_params['mbic']:.0f}_lambda1_{best_params['lambda1']:.2f}.png")
+#     plt.savefig(file_path, dpi=300, bbox_inches='tight')
+#     plt.show()
 
 
 if __name__ == "__main__":

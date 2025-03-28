@@ -33,15 +33,13 @@ results = {}
 key = (B_type, Correlation_type)
 results[key] = {}
 
-for i in range(1):
-    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=0.25,
-                                                       B_type=B_type, Correlation_type=Correlation_type, seed=12)
+for censoring_rate in [0.25, 0.35, 0.5, 0.7]:
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=censoring_rate,
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=i)
     X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
     if True:
         parameter_ranges = {'lambda1': np.linspace(0.05, 0.45, 5),
                             'lambda2': np.linspace(0.05, 0.25, 3)}
-        # parameter_ranges = {'lambda1': np.linspace(0.05, 0.45, 5),
-        #                     'lambda2': np.linspace(0.01, 0.25, 7)}
         B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
                                                     method='proposed')  # B_init=B_heter
         B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
@@ -66,11 +64,11 @@ for i in range(1):
     # # homo method
     results[key]['homo'] = evaluate_coef_test(B_homo, B, test_data)
 
-print(results)
-# # 转化为表格呈现
-res = get_mean_std(results)
-latex = generate_latex_table1(res)
-print(latex)
+    print(results)
+    # # 转化为表格呈现
+    # res = get_mean_std(results)
+    latex = generate_latex_table1(results)
+    print(latex)
 
 running_time = time.time() - start_time
 print(f"running time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f} hours)")

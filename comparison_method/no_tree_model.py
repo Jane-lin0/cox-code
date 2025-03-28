@@ -1,8 +1,6 @@
 import numpy as np
 
-from related_functions import group_soft_threshold, gradient_descent_adam_initial, compute_Delta, refit
-from data_generation import get_R_matrix
-
+from related_functions import group_soft_threshold, gradient_descent_adam_initial, compute_Delta
 
 def beta_estimation(X_g, delta_g, R_g, lambda1, rho=1, eta=0.1, a=3, M=300, L=100, tolerance_l=1e-4, delta_dual=5e-5,
                     delta_primal=5e-5, beta_init=None):
@@ -40,10 +38,10 @@ def beta_estimation(X_g, delta_g, R_g, lambda1, rho=1, eta=0.1, a=3, M=300, L=10
                 beta1_minus_u_abs = np.abs(beta1[j] - u[j])       # MCP
                 if beta1_minus_u_abs <= a * lambda1:
                     lambda1_j = lambda1 - beta1_minus_u_abs / a
-                elif beta1_minus_u_abs > a * lambda1:
+                else:    # beta1_minus_u_abs > a * lambda1
                     lambda1_j = 0
-                else:
-                    lambda1_j = None
+                # else:
+                #     lambda1_j = None
                 beta3[j] = group_soft_threshold(beta1[j] - u[j], lambda1_j / rho)     # lambda1_j
 
         # 更新 u
@@ -72,7 +70,8 @@ def no_tree_model(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=200, L=100, toler
                   delta_primal=5e-5, B_init=None):
     G = len(X)
     p = X[0].shape[1]
-    B_hat = np.zeros((G, p))
+    # B_hat = np.zeros((G, p))
+    B_hat = np.random.uniform(low=-0.1, high=0.1, size=(G, p))
     for g in range(G):
         if B_init is None:
             beta_init = None

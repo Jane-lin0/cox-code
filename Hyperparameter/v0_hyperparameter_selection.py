@@ -18,35 +18,35 @@ def grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho, eta, meth
     # B_init = None
 
     if method == 'notree':
-        if True:  # 不分组做超参数选择
-            for lambda1 in parameter_ranges['lambda2']:
-                print(f"\n lambda1={lambda1}")
-                B_hat = no_tree_model(X, delta, R, lambda1=lambda1, rho=rho, eta=eta, B_init=B_init)
-                # B_init = B_hat.copy()
-                mbic = calculate_mbic(B_hat, X, delta, R)
-                # 检查是否找到了更好的参数
-                if mbic < best_mbic:
-                    best_mbic = mbic.copy()
-                    best_params = {'lambda1': lambda1, 'mbic': best_mbic}
-                    B_best = B_hat.copy()
+        # if True:  # 不分组做超参数选择
+        for lambda1 in parameter_ranges['lambda2']:
+            # print(f"\n lambda1={lambda1}")
+            B_hat = no_tree_model(X, delta, R, lambda1=lambda1, rho=rho, eta=eta, B_init=B_init)
+            # B_init = B_hat.copy()
+            mbic = calculate_mbic(B_hat, X, delta, R)
+            # 检查是否找到了更好的参数
+            if mbic < best_mbic:
+                best_mbic = mbic.copy()
+                best_params = {'lambda1': lambda1, 'mbic': best_mbic}
+                B_best = B_hat.copy()
 
-        else:  # 分组做超参数选择
-            G = len(X)
-            B_best = np.zeros_like(B_init)
-            best_params = {'lambda1': [], 'bic': []}
-            for g in range(G):
-                best_bic = float('inf')
-                for lambda1 in parameter_ranges['lambda2']:
-                    print(f"\n lambda1={lambda1}")
-                    beta = beta_estimation(X[g], delta[g], R[g], lambda1=lambda1, rho=rho, eta=eta, beta_init=B_init[g])
-                    # B_init[g] = beta.copy()
-                    bic = calculate_bic_beta(beta, X[g], delta[g], R[g])
-                    if bic < best_bic:
-                        best_bic = bic
-                        best_lambda1 = lambda1
-                        B_best[g] = beta.copy()
-                best_params['lambda1'].append(best_lambda1)
-                best_params['bic'].append(best_bic)
+        # else:  # 分组做超参数选择
+        #     G = len(X)
+        #     B_best = np.zeros_like(B_init)
+        #     best_params = {'lambda1': [], 'bic': []}
+        #     for g in range(G):
+        #         best_bic = float('inf')
+        #         for lambda1 in parameter_ranges['lambda2']:
+        #             print(f"\n lambda1={lambda1}")
+        #             beta = beta_estimation(X[g], delta[g], R[g], lambda1=lambda1, rho=rho, eta=eta, beta_init=B_init[g])
+        #             # B_init[g] = beta.copy()
+        #             bic = calculate_bic_beta(beta, X[g], delta[g], R[g])
+        #             if bic < best_bic:
+        #                 best_bic = bic
+        #                 best_lambda1 = lambda1
+        #                 B_best[g] = beta.copy()
+        #         best_params['lambda1'].append(best_lambda1)
+        #         best_params['bic'].append(best_bic)
 
     elif method == 'homo':
         for lambda1 in parameter_ranges['lambda2']:

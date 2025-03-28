@@ -9,7 +9,7 @@ from data_generation import get_R_matrix
 
 def data_split(region_list, test_rate, random_seed=None):
     if random_seed is not None:
-        random.seed(random_seed)
+        random.seed(random_seed * 2)
 
     train_data = dict(X=[], Y=[], delta=[], R=[])
     test_data = dict(X=[], Y=[], delta=[], R=[])
