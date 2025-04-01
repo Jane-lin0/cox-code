@@ -30,10 +30,10 @@ def simulate_and_record(B_type, Correlation_type, repeat_id):
         B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1, method='heter')
         results['heter'] = evaluate_coef_test(B_heter, B, test_data)
         if results['heter']['SSE'] < 10:
-            print(f"Found repeat_id {repeat_id} where sse < 5.")
+            print(f"Found repeat_id {repeat_id} where sse < 10.")
             break
         else:
-            repeat_id = random.randint(100, 10000)
+            repeat_id = random.randint(100, 300)
             # repeat_id += 100
 
     # proposed method

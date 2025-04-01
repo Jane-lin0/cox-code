@@ -336,7 +336,7 @@ def define_tree_structure(tree_structure="G5"):
         #     /   \
         #    5      6
         #  / | \   / \
-        # 0  1  2  3
+        # 0  1  2  3  4
     elif tree_structure == "G4":
         tree.add_nodes_from(range(7))
         tree.add_edges_from([
@@ -604,40 +604,40 @@ def generate_latex_table1(results):
     table_body = "\n".join(rows)
     return table_header + table_body + table_footer
 
-
-def generate_latex_table0(results):
-    table = "\\begin{table}[htbp]\n\\centering\n\\caption{模拟结果（每个单元格是30次重复的平均值（标准差））}\n"
-    table += "\\label{table:simulation_result}\n\\scalebox{0.90}{\n\\begin{tabular}{c c c   c c   c c   c c c}\n"
-    table += "\\hline\n"
-    table += "Example & Correlation & Method  & TPR  & FPR & SSE  & C-index & RI  & ARI & G \\\\\n"
-    table += "\\hline\n"
-
-    for B_type in [1]:
-        for Correlation_type in ["Band1"]:
-            for method in ['proposed', 'heter', 'homo', 'no_tree']:
-                example = B_type
-                correlation = Correlation_type
-                TPR = results[(B_type, Correlation_type)][method]['TPR']
-                FPR = results[(B_type, Correlation_type)][method]['FPR']
-                SSE = results[(B_type, Correlation_type)][method]['SSE']
-                c_index = results[(B_type, Correlation_type)][method]['c_index']
-                RI = results[(B_type, Correlation_type)][method]['RI']
-                ARI = results[(B_type, Correlation_type)][method]['ARI']
-                G = results[(B_type, Correlation_type)][method]['G']
-
-                row = f"{example} & {correlation} & {method.capitalize()} & "
-                row += f"{TPR['mean']:.2f} ({TPR['std']:.2f}) & {FPR['mean']:.2f} ({FPR['std']:.2f}) & "
-                row += f"{SSE['mean']:.2f} ({SSE['std']:.2f}) & {c_index['mean']:.2f} ({c_index['std']:.2f}) & "
-                row += f"{RI['mean']:.2f} ({RI['std']:.2f}) & {ARI['mean']:.2f} ({ARI['std']:.2f}) & "
-                row += f"{G['mean']:.2f} ({G['std']:.2f})   \\\\\n "
-                table += row
-
-            table += "\n"
-
-    table += "\\hline\n"
-    table += "\\end{tabular}}\n\\end{table}"
-
-    return table
+#
+# def generate_latex_table0(results):
+#     table = "\\begin{table}[htbp]\n\\centering\n\\caption{模拟结果（每个单元格是30次重复的平均值（标准差））}\n"
+#     table += "\\label{table:simulation_result}\n\\scalebox{0.90}{\n\\begin{tabular}{c c c   c c   c c   c c c}\n"
+#     table += "\\hline\n"
+#     table += "Example & Correlation & Method  & TPR  & FPR & SSE  & C-index & RI  & ARI & G \\\\\n"
+#     table += "\\hline\n"
+#
+#     for B_type in [1]:
+#         for Correlation_type in ["Band1"]:
+#             for method in ['proposed', 'heter', 'homo', 'no_tree']:
+#                 example = B_type
+#                 correlation = Correlation_type
+#                 TPR = results[(B_type, Correlation_type)][method]['TPR']
+#                 FPR = results[(B_type, Correlation_type)][method]['FPR']
+#                 SSE = results[(B_type, Correlation_type)][method]['SSE']
+#                 c_index = results[(B_type, Correlation_type)][method]['c_index']
+#                 RI = results[(B_type, Correlation_type)][method]['RI']
+#                 ARI = results[(B_type, Correlation_type)][method]['ARI']
+#                 G = results[(B_type, Correlation_type)][method]['G']
+#
+#                 row = f"{example} & {correlation} & {method.capitalize()} & "
+#                 row += f"{TPR['mean']:.2f} ({TPR['std']:.2f}) & {FPR['mean']:.2f} ({FPR['std']:.2f}) & "
+#                 row += f"{SSE['mean']:.2f} ({SSE['std']:.2f}) & {c_index['mean']:.2f} ({c_index['std']:.2f}) & "
+#                 row += f"{RI['mean']:.2f} ({RI['std']:.2f}) & {ARI['mean']:.2f} ({ARI['std']:.2f}) & "
+#                 row += f"{G['mean']:.2f} ({G['std']:.2f})   \\\\\n "
+#                 table += row
+#
+#             table += "\n"
+#
+#     table += "\\hline\n"
+#     table += "\\end{tabular}}\n\\end{table}"
+#
+#     return table
 
 
 # 保存结果到 CSV 文件

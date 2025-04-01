@@ -40,89 +40,114 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
     G = len(N_train)
     # 真实系数
     if B_type == 1:
-        # beta_significance = np.hstack([generate_random_numbers(n=10, seed=0), np.zeros(p - 10)])
-        beta_significance = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
-        B = np.tile(beta_significance, (G, 1))  # 真实 G = 1
+        # beta_ = np.hstack([generate_random_numbers(n=10, seed=0), np.zeros(p - 10)])
+        beta_ = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
+        B = np.tile(beta_, (G, 1))  # 真实 G = 1
     elif B_type == 2:
-        beta_significance1 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)])
-
-        beta_significance2 = np.hstack([np.array([-0.4 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
+        beta_1 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
+        beta_2 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
         if G == 5:
-            B_G1 = np.tile(beta_significance1, (3, 1))  # 真实 G = 2
-            B_G2 = np.tile(beta_significance2, (2, 1))
+            B_G1 = np.tile(beta_1, (3, 1))  # 真实 G = 2
+            B_G2 = np.tile(beta_2, (2, 1))
             B = np.vstack([B_G1, B_G2])
         elif G == 8:
-            B_G1 = np.tile(beta_significance1, (4, 1))  # 真实 G = 2
-            B_G2 = np.tile(beta_significance2, (4, 1))
+            B_G1 = np.tile(beta_1, (4, 1))  # 真实 G = 2
+            B_G2 = np.tile(beta_2, (4, 1))
             B = np.vstack([B_G1, B_G2])
-        elif G == 9:
-            B_G1 = np.tile(beta_significance1, (5, 1))  # 真实 G = 2
-            B_G2 = np.tile(beta_significance2, (4, 1))
-            B = np.vstack([B_G1, B_G2])
-        elif G == 11:
-            B_G1 = np.tile(beta_significance1, (6, 1))  # 真实 G = 2
-            B_G2 = np.tile(beta_significance2, (5, 1))
-            B = np.vstack([B_G1, B_G2])
-            # B_G11 = np.hstack([beta_significance, np.zeros(p - 10)])
-            # B_G14 = np.tile(np.hstack([beta_significance, np.zeros(p - 10)]), (4, 1))
-            # B_G23 = np.tile(np.hstack([-beta_significance, np.zeros(p - 10)]), (3, 1))
+        # elif G == 9:
+        #     B_G1 = np.tile(beta_1, (5, 1))  # 真实 G = 2
+        #     B_G2 = np.tile(beta_2, (4, 1))
+        #     B = np.vstack([B_G1, B_G2])
+        # elif G == 11:
+        #     B_G1 = np.tile(beta_1, (6, 1))  # 真实 G = 2
+        #     B_G2 = np.tile(beta_2, (5, 1))
+        #     B = np.vstack([B_G1, B_G2])
+            # B_G11 = np.hstack([beta_, np.zeros(p - 10)])
+            # B_G14 = np.tile(np.hstack([beta_, np.zeros(p - 10)]), (4, 1))
+            # B_G23 = np.tile(np.hstack([-beta_, np.zeros(p - 10)]), (3, 1))
             # B = np.vstack([B_G11, B_G23, B_G14, B_G23])   # 错开分组
-    elif B_type == 3:
-        beta_significance1 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
+    elif B_type == 4:
+        beta_1 = np.hstack([np.array([0.8 if i % 2 == 0 else -0.8 for i in range(10)]), np.zeros(p - 10)])
+        beta_2 = np.hstack([np.array([0.4 if i % 2 == 0 else -0.4 for i in range(10)]), np.zeros(p - 10)])
+        beta_3 = np.hstack([np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(10)]), np.zeros(p - 10)])
+        beta_4 = np.hstack([np.array([-0.4 if i % 2 == 0 else 0.4 for i in range(10)]), np.zeros(p - 10)])
+        if G == 8:
+            B_G1 = np.tile(beta_1, (2, 1))
+            B_G2 = np.tile(beta_2, (2, 1))
+            B_G3 = np.tile(beta_3, (2, 1))
+            B_G4 = np.tile(beta_4, (2, 1))
+            B = np.vstack([B_G1, B_G2, B_G3, B_G4])
+    elif B_type == 5:
+        beta_1 = np.hstack([np.array([0.9 if i % 2 == 0 else -0.9 for i in range(10)]), np.zeros(p - 10)])
+        beta_2 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
+        beta_3 = np.hstack([np.array([0.2 if i % 2 == 0 else -0.2 for i in range(10)]), np.zeros(p - 10)])
+        beta_4 = np.hstack([np.array([-0.8 if i % 2 == 0 else 0.8 for i in range(10)]), np.zeros(p - 10)])
+        beta_5 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
+        if G == 5:
+            B = np.vstack([beta_1, beta_2, beta_3, beta_4, beta_5])
+    elif B_type == 8:
+        beta_1 = np.hstack([np.array([0.6 if i % 2 == 0 else -0.6 for i in range(10)]), np.zeros(p - 10)])
+        beta_2 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
+        beta_3 = np.hstack([np.array([0.4 if i % 2 == 0 else -0.4 for i in range(10)]), np.zeros(p - 10)])
+        beta_4 = np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)])
+        beta_5 = np.hstack([np.array([-0.7 if i % 2 == 0 else 0.7 for i in range(10)]), np.zeros(p - 10)])
+        beta_6 = np.hstack([np.array([-0.6 if i % 2 == 0 else 0.6 for i in range(10)]), np.zeros(p - 10)])
+        beta_7 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
+        beta_8 = np.hstack([np.array([-0.4 if i % 2 == 0 else 0.4 for i in range(10)]), np.zeros(p - 10)])
+        if G == 8:
+            B = np.vstack([beta_1, beta_2, beta_3, beta_4, beta_5, beta_6, beta_7, beta_8])
 
-        beta_significance2 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
-
-        beta_significance3 = np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)])
-        beta_significance4 = np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)])
-        # beta_significance1 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
+    # elif B_type == 3:
+    #     beta_1 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
+    #
+    #     beta_2 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
+    #
+    #     beta_3 = np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(10)]), np.zeros(p - 10)])
+    #     beta_4 = np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)])
+        # beta_1 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
         #
-        # beta_significance2 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(5)]), np.zeros(5),
+        # beta_2 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(5)]), np.zeros(5),
         #                                 np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(5)]), np.zeros(p - 15)])
         #
-        # beta_significance3 = np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(5)]), np.zeros(10),
+        # beta_3 = np.hstack([np.array([0.3 if i % 2 == 0 else -0.3 for i in range(5)]), np.zeros(10),
         #                                 np.array([0.3 if i % 2 == 0 else -0.3 for i in range(5)]), np.zeros(p - 20)])
-        # beta_significance4 = np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)])
-        if G == 5:
-            B_G1 = np.tile(beta_significance1, (3, 1))
-            B_G2 = np.tile(beta_significance2, (1, 1))
-            B_G3 = np.tile(beta_significance3, (1, 1))
-            B = np.vstack([B_G1, B_G2, B_G3])
-        elif G == 4:
-            B_G1 = np.tile(beta_significance1, (1, 1))
-            B_G2 = np.tile(beta_significance2, (1, 1))
-            B_G3 = np.tile(beta_significance3, (2, 1))
-            B = np.vstack([B_G1, B_G2, B_G3])
-        elif G == 6:
-            B_G1 = np.tile(beta_significance1, (2, 1))
-            B_G2 = np.tile(beta_significance2, (2, 1))
-            B_G3 = np.tile(beta_significance3, (2, 1))
-            B = np.vstack([B_G1, B_G2, B_G3])
-        elif G == 7:
-            B_G1 = np.tile(beta_significance1, (2, 1))
-            B_G2 = np.tile(beta_significance2, (2, 1))
-            B_G3 = np.tile(beta_significance3, (3, 1))
-            B = np.vstack([B_G1, B_G2, B_G3])
-        elif G == 8:
-            B_G1 = np.tile(beta_significance1, (2, 1))
-            B_G2 = np.tile(beta_significance2, (2, 1))
-            B_G3 = np.tile(beta_significance3, (2, 1))
-            B_G4 = np.tile(beta_significance4, (2, 1))
-            B = np.vstack([B_G1, B_G2, B_G3, B_G4])
-        elif G == 9:
-            B_G1 = np.tile(beta_significance1, (3, 1))
-            B_G2 = np.tile(beta_significance2, (2, 1))
-            B_G3 = np.tile(beta_significance3, (4, 1))
-            B = np.vstack([B_G1, B_G2, B_G3])
-        elif G == 11:
-            B_G1 = np.tile(beta_significance1, (4, 1))
-            B_G2 = np.tile(beta_significance2, (4, 1))
-            B_G3 = np.tile(beta_significance3, (3, 1))
-            B = np.vstack([B_G1, B_G2, B_G3])
-        elif G == 16:
-            B_G1 = np.tile(beta_significance1, (4, 1))
-            B_G2 = np.tile(beta_significance2, (4, 1))
-            B_G3 = np.tile(beta_significance3, (8, 1))
-            B = np.vstack([B_G1, B_G2, B_G3])
+        # beta_4 = np.hstack([np.array([-0.3 if i % 2 == 0 else 0.3 for i in range(10)]), np.zeros(p - 10)])
+        # if G == 5:
+        #     B_G1 = np.tile(beta_1, (3, 1))
+        #     B_G2 = np.tile(beta_2, (1, 1))
+        #     B_G3 = np.tile(beta_3, (1, 1))
+        #     B = np.vstack([B_G1, B_G2, B_G3])
+        # elif G == 4:
+        #     B_G1 = np.tile(beta_1, (1, 1))
+        #     B_G2 = np.tile(beta_2, (1, 1))
+        #     B_G3 = np.tile(beta_3, (2, 1))
+        #     B = np.vstack([B_G1, B_G2, B_G3])
+        # elif G == 6:
+        #     B_G1 = np.tile(beta_1, (2, 1))
+        #     B_G2 = np.tile(beta_2, (2, 1))
+        #     B_G3 = np.tile(beta_3, (2, 1))
+        #     B = np.vstack([B_G1, B_G2, B_G3])
+        # elif G == 7:
+        #     B_G1 = np.tile(beta_1, (2, 1))
+        #     B_G2 = np.tile(beta_2, (2, 1))
+        #     B_G3 = np.tile(beta_3, (3, 1))
+        #     B = np.vstack([B_G1, B_G2, B_G3])
+        # elif G == 9:
+        #     B_G1 = np.tile(beta_1, (3, 1))
+        #     B_G2 = np.tile(beta_2, (2, 1))
+        #     B_G3 = np.tile(beta_3, (4, 1))
+        #     B = np.vstack([B_G1, B_G2, B_G3])
+        # elif G == 11:
+        #     B_G1 = np.tile(beta_1, (4, 1))
+        #     B_G2 = np.tile(beta_2, (4, 1))
+        #     B_G3 = np.tile(beta_3, (3, 1))
+        #     B = np.vstack([B_G1, B_G2, B_G3])
+        # elif G == 16:
+        #     B_G1 = np.tile(beta_1, (4, 1))
+        #     B_G2 = np.tile(beta_2, (4, 1))
+        #     B_G3 = np.tile(beta_3, (8, 1))
+        #     B = np.vstack([B_G1, B_G2, B_G3])
+
 
     # sigma = sigma_type(method, p)
     # X 的协方差矩阵

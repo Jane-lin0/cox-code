@@ -57,7 +57,7 @@ def homogeneity_beta(X, delta, R, lambda1, rho=1, eta=0.1, a=3, M=200, L=50, tol
 
         # 检查收敛条件
         if max(epsilons_dual) < delta_dual and epsilon_primal < delta_primal:
-            print(f"Iteration m={m}: homogeneity model convergence ")
+            # print(f"Iteration m={m}: homogeneity model convergence ")
             break
 
     beta_hat = beta1.copy()

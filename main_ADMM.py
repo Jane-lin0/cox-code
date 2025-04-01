@@ -1,11 +1,10 @@
 import time
-
 import numpy as np
 
-from data_generation import get_R_matrix, generate_simulated_data
+from data_generation import generate_simulated_data
 from evaluation_indicators import evaluate_coef_test
-from related_functions import define_tree_structure, compute_Delta, internal_nodes, children, all_descendants, \
-    group_soft_threshold, gradient_descent_adam, get_coef_estimation, refit, get_D, get_gamma
+from related_functions import define_tree_structure, compute_Delta, internal_nodes, children, group_soft_threshold, \
+    gradient_descent_adam, get_coef_estimation, get_D, get_gamma
 
 
 def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, tree_structure="G5", a=3, max_iter_m=200,
@@ -131,7 +130,7 @@ def ADMM_optimize(X, delta, R, lambda1, lambda2, rho=1, eta=0.1, tree_structure=
 
         # 检查收敛条件
         if max(epsilons_dual) < delta_dual and max(epsilons_primal) < delta_primal:
-            print(f"\n Iteration {m}: ADMM convergence ")
+            # print(f"\n Iteration {m}: ADMM convergence ")
             break
 
     B_hat = get_coef_estimation(B3, Gamma1, D)

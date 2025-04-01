@@ -1,14 +1,12 @@
 import numpy as np
 
-from Initial_value_selection import initial_value_B
 from comparison_method.no_tree_model import no_tree_model
-from related_functions import compute_Delta, group_soft_threshold, refit, get_mean_std, generate_latex_table
-from data_generation import get_R_matrix
+from related_functions import compute_Delta, group_soft_threshold
 
 
-def get_matrix_index(i, j, G):
-    l = (2 * G - i - 1) * i / 2 + j - i - 1
-    return int(l)
+# def get_matrix_index(i, j, G):
+#     l = (2 * G - i - 1) * i / 2 + j - i - 1
+#     return int(l)
 
 
 def get_E(G):
@@ -139,7 +137,7 @@ def heterogeneity_model(X, delta, R, lambda1, lambda2, rho=0.5, eta=0.3, a=3, ma
         primal = compute_Delta(B1, B3, is_relative=False)
 
         if max(dual) < delta_dual and primal < delta_prime:
-            print(f"\n Iteration m={m}: hetergeneity model convergence ")
+            # print(f"\n Iteration m={m}: hetergeneity model convergence ")
             break
 
     B_hat = B1.copy()
