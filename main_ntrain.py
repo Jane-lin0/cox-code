@@ -1,5 +1,7 @@
 import random
 import sys
+import time
+
 import numpy as np
 import pandas as pd
 import networkx as nx
@@ -8,6 +10,7 @@ from sklearn.metrics import rand_score, adjusted_rand_score
 
 #读取参数，可用于区别输出结果的文件名
 i = sys.argv[1]
+repeat_id = int(i)
 
 #输出路径，输出到当前路径（HPC Pack提交作业时指定的working directory）
 path = sys.path[0]
@@ -17,15 +20,17 @@ path = sys.path[0]
 
 #your simulation code here
 #程序中不要使用任何并行包
-B_type = 1
+B_type = 2
 Correlation_type = "Band1"     # X 的协方差形式
 G = 5  # 类别数
 tree_structure = "G5"
-p = 20  # 变量维度
-N_train = np.array([20] * G)  # 训练样本
-N_test = np.array([30] * G)
+p = 200  # 变量维度
+ntrain_list = [100, 200, 400, 800, 1200, 2000]
+# N_train = np.array([200] * G)  # 训练样本
+N_test = np.array([300] * G)
 censoring_rate = 0.25
-parameter_ranges = {'lambda1': np.linspace(0.05, 0.45, 3),
+
+parameter_ranges = {'lambda1': np.linspace(0.05, 0.45, 5),
                     'lambda2': np.linspace(0.05, 0.25, 3)}
 results = {}
 
@@ -41,7 +46,7 @@ def get_R_matrix(Y_g):
 
 def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censoring_rate=0.25, seed=None):
     if seed is not None:
-        np.random.seed(seed+2000)
+        np.random.seed(seed)
 
     G = len(N_train)
     # 真实系数
@@ -937,53 +942,50 @@ def evaluate_coef_test(B_hat, B, test_data):
     return results
 
 
-def save_to_csv(data, filename='results.csv'):
-    records = []
-    for (k1, k2), methods in data.items():  # 将字典转换为 DataFrame
-        for method, metrics in methods.items():
-            record = {'Key1': k1, 'Key2': k2, 'Method': method}
-            record.update(metrics)
-            records.append(record)
-    df = pd.DataFrame(records)
-    df.to_csv(filename, index=False)
+# start_time = time.time()
+for ntrain in ntrain_list:
+    N_train = np.array([ntrain] * G)
+    max_attempts = 5
+    attempt = 0
+    while attempt < max_attempts:
+        train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=censoring_rate,
+                                                           B_type=B_type, Correlation_type=Correlation_type, seed=repeat_id)
+        X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
 
+        # 执行网格搜索
+        # hetero method
+        B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
+                                                 method='heter')
+        results['heter'] = evaluate_coef_test(B_heter, B, test_data)
+        if results['heter']['SSE'] < 10:
+            break
+        else:
+            repeat_id = random.randint(200, 500)
+            # repeat_id += 100
+        attempt += 1
 
-while True:
-    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=censoring_rate,
-                                                       B_type=B_type, Correlation_type=Correlation_type, seed=i)
-    X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
+    # proposed method
+    # B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
+    #                                             method='proposed')
+    results['proposed'] = evaluate_coef_test(
+        grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,method='proposed'),
+        B, test_data)
 
-    # 执行网格搜索
-    # hetero method
-    B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
-                                             method='heter')
-    results['heter'] = evaluate_coef_test(B_heter, B, test_data)
-    if results['heter']['SSE'] < 10:
-        # print(f"Found repeat_id {repeat_id} where sse < 10.")
-        break
-    else:
-        i = random.randint(100, 300)
-        # repeat_id += 100
+    # NO tree method
+    # B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.1, method='notree')
+    results['notree'] = evaluate_coef_test(
+        grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.1, method='notree'),
+        B, test_data)
 
-# proposed method
-# B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
-#                                             method='proposed')
-results['proposed'] = evaluate_coef_test(
-    grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,method='proposed'),
-    B, test_data)
+    # homo method
+    # B_homo = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.1, method='homo')
+    results['homo'] = evaluate_coef_test(
+        grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.1, method='homo'),
+        B, test_data)
 
-# NO tree method
-# B_notree = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.1, method='notree')
-results['notree'] = evaluate_coef_test(
-    grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.1, method='notree'),
-    B, test_data)
+    # 保存
+    df = pd.DataFrame(results).T
+    df.to_csv(f"{path}/results/results_ntrain{ntrain}_ID{i}.csv")
 
-# homo method
-# B_homo = grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.1, method='homo')
-results['homo'] = evaluate_coef_test(
-    grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.1, method='homo'),
-    B, test_data)
-
-# 保存
-csv_filename = f"{path}/results_B{B_type}_{Correlation_type}_ID{i}.csv"
-save_to_csv(results, filename=csv_filename)
+# running_time = time.time() - start_time
+# print(f"running time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f} hours)")
