@@ -20,17 +20,17 @@ path = sys.path[0]
 
 #your simulation code here
 #程序中不要使用任何并行包
-B_type = 1
+B_type = 2
 Correlation_list = ["Band1", "Band2", "AR1", "AR2"]
 # Correlation_list = ["Band1", "Band2", "AR1", "AR2", "CS1", "CS2"]
-G = 8  # 类别数
-tree_structure = "G8"
+G = 5  # 类别数
+tree_structure = "G5"
 p = 200  # 变量维度
 N_train = np.array([200] * G)  # 训练样本
 N_test = np.array([300] * G)
 censoring_rate = 0.25
 parameter_ranges = {'lambda1': np.linspace(0.05, 0.45, 5),
-                    'lambda2': np.linspace(0.05, 0.25, 3)}
+                    'lambda2': np.linspace(0.02, 0.22, 5)}
 
 results = {}
 
@@ -57,8 +57,8 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
         beta_1 = np.hstack([np.array([0.5 if i % 2 == 0 else -0.5 for i in range(10)]), np.zeros(p - 10)])
         beta_2 = np.hstack([np.array([-0.5 if i % 2 == 0 else 0.5 for i in range(10)]), np.zeros(p - 10)])
         if G == 5:
-            B_G1 = np.tile(beta_1, (3, 1))  # 真实 G = 2
-            B_G2 = np.tile(beta_2, (2, 1))
+            B_G1 = np.tile(beta_1, (2, 1))  # 真实系数和树结构不一致
+            B_G2 = np.tile(beta_2, (3, 1))
             B = np.vstack([B_G1, B_G2])
         elif G == 8:
             B_G1 = np.tile(beta_1, (4, 1))  # 真实 G = 2
@@ -113,6 +113,7 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
     elif Correlation_type == "CS2":
         rho = 0.5
         sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
+
 
     train_data = dict(X=[], Y=[], delta=[], R=[])
     test_data = dict(X=[], Y=[], delta=[], R=[])
@@ -940,7 +941,6 @@ def evaluate_coef_test(B_hat, B, test_data):
     return results
 
 
-# start_time = time.time()
 for Correlation_type in Correlation_list:
     # max_attempts = 5
     # attempt = 0

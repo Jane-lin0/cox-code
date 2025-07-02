@@ -20,18 +20,18 @@ path = sys.path[0]
 
 #your simulation code here
 #程序中不要使用任何并行包
-B_type = 5
-Correlation_list = ["Band1", "Band2", "AR1", "AR2", "CS1", "CS2"]     # X 的协方差形式
-G = 5  # 类别数
-tree_structure = "G5"
+B_type = 1
+Correlation_list = ["Band1", "Band2", "AR1", "AR2"]
+# Correlation_list = ["Band1", "Band2", "AR1", "AR2", "CS1", "CS2"]
+G = 6  # 类别数
+tree_structure = "G6"
 p = 200  # 变量维度
 N_train = np.array([200] * G)  # 训练样本
 N_test = np.array([300] * G)
 censoring_rate = 0.25
 parameter_ranges = {'lambda1': np.linspace(0.05, 0.45, 5),
-                    'lambda2': np.linspace(0.05, 0.25, 3)}
-# parameter_ranges = {'lambda1': np.linspace(0.1, 0.2, 2),
-#                     'lambda2': np.linspace(0.1, 0.2, 2)}
+                    'lambda2': np.linspace(0.02, 0.22, 5)}  # np.linspace(0.05, 0.25, 3)}
+
 results = {}
 
 
@@ -60,6 +60,10 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
             B_G1 = np.tile(beta_1, (3, 1))  # 真实 G = 2
             B_G2 = np.tile(beta_2, (2, 1))
             B = np.vstack([B_G1, B_G2])
+        elif G == 6:
+            B_G1 = np.tile(beta_1, (4, 1))  # 真实 G = 2
+            B_G2 = np.tile(beta_2, (2, 1))
+            B = np.vstack([B_G1, B_G2])
         elif G == 8:
             B_G1 = np.tile(beta_1, (4, 1))  # 真实 G = 2
             B_G2 = np.tile(beta_2, (4, 1))
@@ -74,6 +78,12 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
             B_G2 = np.tile(beta_2, (2, 1))
             B_G3 = np.tile(beta_3, (2, 1))
             B_G4 = np.tile(beta_4, (2, 1))
+            B = np.vstack([B_G1, B_G2, B_G3, B_G4])
+        elif G == 6:
+            B_G1 = np.tile(beta_1, (2, 1))
+            B_G2 = np.tile(beta_2, (2, 1))
+            B_G3 = np.tile(beta_3, (1, 1))
+            B_G4 = np.tile(beta_4, (1, 1))
             B = np.vstack([B_G1, B_G2, B_G3, B_G4])
     elif B_type == 5:
         beta_1 = np.hstack([np.array([0.9 if i % 2 == 0 else -0.9 for i in range(10)]), np.zeros(p - 10)])
@@ -96,25 +106,23 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
             B = np.vstack([beta_1, beta_2, beta_3, beta_4, beta_5, beta_6, beta_7, beta_8])
 
     # X 的协方差矩阵
-    if Correlation_type == "AR":
-        rho = 0.3
+    if Correlation_type == "AR1":
+        rho = 0.1
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
-    elif Correlation_type == "AR(0.5)":
-        rho = 0.5
+    elif Correlation_type == "AR2":
+        rho = 0.3
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
     elif Correlation_type == "Band1":
         sigma = np.vstack([[int(i == j) + 0.2 * int(np.abs(i - j) == 1) for j in range(p)] for i in range(p)])
     elif Correlation_type == "Band2":
-        sigma = np.vstack([[int(i == j) + 0.1 * int(np.abs(i - j) == 1) + 0.1 * int(np.abs(i - j) == 2)
+        sigma = np.vstack([[int(i == j) + 0.4 * int(np.abs(i - j) == 1) + 0.2 * int(np.abs(i - j) == 2)
                             for j in range(p)] for i in range(p)])
-    elif Correlation_type == "CS":
+    elif Correlation_type == "CS1":
         rho = 0.1
         sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
     elif Correlation_type == "CS2":
-        rho = 0.2
+        rho = 0.5
         sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
-    else:
-        sigma = np.eye(p)
 
     train_data = dict(X=[], Y=[], delta=[], R=[])
     test_data = dict(X=[], Y=[], delta=[], R=[])
@@ -154,6 +162,13 @@ def define_tree_structure(tree_structure="G5"):
         # 添加边，连接父子节点
         tree.add_edges_from([(7, 6), (7, 5),
                              (6, 4), (6, 3), (5, 2), (5, 1), (5, 0)])  # 假设节点 K 是根节点
+
+    elif tree_structure == "G6":
+        tree.add_nodes_from(range(11))
+        tree.add_edges_from([(10, 8), (10, 9),
+                            (8, 6), (8, 7), (9, 4), (9, 5),
+                            (6, 0), (6, 1), (7, 2), (7, 3)])
+
     elif tree_structure == "G8":
         tree.add_nodes_from(range(13))
         tree.add_edges_from([(12, 8), (12, 9), (12, 10), (12, 11),
@@ -944,24 +959,24 @@ def evaluate_coef_test(B_hat, B, test_data):
 
 # start_time = time.time()
 for Correlation_type in Correlation_list:
-    max_attempts = 5
-    attempt = 0
-    while attempt < max_attempts:
-        train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=censoring_rate,
-                                                           B_type=B_type, Correlation_type=Correlation_type, seed=repeat_id)
-        X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
+    # max_attempts = 5
+    # attempt = 0
+    # while attempt < max_attempts:
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=censoring_rate,
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=repeat_id)
+    X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
 
-        # 执行网格搜索
-        # hetero method
-        B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
-                                                 method='heter')
-        results['heter'] = evaluate_coef_test(B_heter, B, test_data)
-        if results['heter']['SSE'] < 10:
-            break
-        else:
-            repeat_id = random.randint(200, 500)
-            # repeat_id += 100
-        attempt += 1
+    # 执行网格搜索
+    # hetero method
+    B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
+                                             method='heter')
+    results['heter'] = evaluate_coef_test(B_heter, B, test_data)
+        # if results['heter']['SSE'] < 10:
+        #     break
+        # else:
+        #     repeat_id = random.randint(200, 500)
+        #     # repeat_id += 100
+        # attempt += 1
 
     # proposed method
     # B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
@@ -987,5 +1002,3 @@ for Correlation_type in Correlation_list:
     df = pd.DataFrame(results).T
     df.to_csv(f"{path}/results/results_G{G}_S{B_type}_{Correlation_type}_ID{i}.csv")
 
-# running_time = time.time() - start_time
-# print(f"running time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f} hours)")

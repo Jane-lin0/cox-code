@@ -21,7 +21,8 @@ path = sys.path[0]
 #your simulation code here
 #程序中不要使用任何并行包
 B_type = 1
-Correlation_list = ["Band1", "Band2", "AR1", "AR2", "CS1", "CS2"]     # X 的协方差形式
+Correlation_list = ["Band1", "Band2", "AR1", "AR2"]
+# Correlation_list = ["Band1", "Band2", "AR1", "AR2", "CS1", "CS2"]
 G = 5  # 类别数
 tree_structure = "G5"
 p = 200  # 变量维度
@@ -96,10 +97,10 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
 
     # X 的协方差矩阵
     if Correlation_type == "AR1":
-        rho = 0.3
+        rho = 0.1
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
     elif Correlation_type == "AR2":
-        rho = 0.5
+        rho = 0.3
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
     elif Correlation_type == "Band1":
         sigma = np.vstack([[int(i == j) + 0.2 * int(np.abs(i - j) == 1) for j in range(p)] for i in range(p)])
@@ -107,13 +108,12 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
         sigma = np.vstack([[int(i == j) + 0.4 * int(np.abs(i - j) == 1) + 0.2 * int(np.abs(i - j) == 2)
                             for j in range(p)] for i in range(p)])
     elif Correlation_type == "CS1":
-        rho = 0.2
+        rho = 0.1
         sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
     elif Correlation_type == "CS2":
-        rho = 0.4
+        rho = 0.5
         sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
-    else:
-        sigma = np.eye(p)
+
 
     train_data = dict(X=[], Y=[], delta=[], R=[])
     test_data = dict(X=[], Y=[], delta=[], R=[])
@@ -941,26 +941,26 @@ def evaluate_coef_test(B_hat, B, test_data):
     return results
 
 
-start_time = time.time()
+# start_time = time.time()
 for Correlation_type in Correlation_list:
-    max_attempts = 5
-    attempt = 0
-    while attempt < max_attempts:
-        train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=censoring_rate,
-                                                           B_type=B_type, Correlation_type=Correlation_type, seed=repeat_id)
-        X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
+    # max_attempts = 5
+    # attempt = 0
+    # while attempt < max_attempts:
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=censoring_rate,
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=repeat_id)
+    X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
 
-        # 执行网格搜索
-        # hetero method
-        B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
-                                                 method='heter')
-        results['heter'] = evaluate_coef_test(B_heter, B, test_data)
-        if results['heter']['SSE'] < 10:
-            break
-        else:
-            repeat_id = random.randint(200, 500)
+    # 执行网格搜索
+    # hetero method
+    B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
+                                             method='heter')
+    results['heter'] = evaluate_coef_test(B_heter, B, test_data)
+        # if results['heter']['SSE'] < 10:
+        #     break
+        # else:
+        #     repeat_id = random.randint(200, 500)
             # repeat_id += 100
-        attempt += 1
+        # attempt += 1
 
     # proposed method
     # B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
@@ -981,10 +981,9 @@ for Correlation_type in Correlation_list:
         grid_search_hyperparameters_v0(parameter_ranges, X, delta, R, rho=1, eta=0.1, method='homo'),
         B, test_data)
 
-
     # 保存
     df = pd.DataFrame(results).T
     df.to_csv(f"{path}/results/results_G{G}_S{B_type}_{Correlation_type}_ID{i}.csv")
 
-running_time = time.time() - start_time
-print(f"running time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f} hours)")
+# running_time = time.time() - start_time
+# print(f"running time: {running_time / 60:.2f} minutes ({running_time / 3600:.2f} hours)")

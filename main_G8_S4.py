@@ -21,7 +21,8 @@ path = sys.path[0]
 #your simulation code here
 #程序中不要使用任何并行包
 B_type = 4
-Correlation_list = ["Band1", "Band2", "AR1", "AR2", "CS1", "CS2"]     # X 的协方差形式
+Correlation_list = ["Band1", "Band2", "AR1", "AR2"]
+# Correlation_list = ["Band1", "Band2", "AR1", "AR2", "CS1", "CS2"]     # X 的协方差形式
 G = 8  # 类别数
 tree_structure = "G8"
 p = 200  # 变量维度
@@ -29,7 +30,7 @@ N_train = np.array([200] * G)  # 训练样本
 N_test = np.array([300] * G)
 censoring_rate = 0.25
 parameter_ranges = {'lambda1': np.linspace(0.05, 0.45, 5),
-                    'lambda2': np.linspace(0.05, 0.25, 3)}
+                    'lambda2': np.linspace(0.02, 0.22, 5)}  # np.linspace(0.05, 0.25, 3)}
 
 results = {}
 
@@ -95,25 +96,23 @@ def generate_simulated_data(p, N_train, N_test, B_type, Correlation_type, censor
             B = np.vstack([beta_1, beta_2, beta_3, beta_4, beta_5, beta_6, beta_7, beta_8])
 
     # X 的协方差矩阵
-    if Correlation_type == "AR":
-        rho = 0.3
+    if Correlation_type == "AR1":
+        rho = 0.1
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
-    elif Correlation_type == "AR(0.5)":
-        rho = 0.5
+    elif Correlation_type == "AR2":
+        rho = 0.3
         sigma = np.vstack([[rho ** abs(i - j) for j in range(p)] for i in range(p)])
     elif Correlation_type == "Band1":
         sigma = np.vstack([[int(i == j) + 0.2 * int(np.abs(i - j) == 1) for j in range(p)] for i in range(p)])
     elif Correlation_type == "Band2":
-        sigma = np.vstack([[int(i == j) + 0.1 * int(np.abs(i - j) == 1) + 0.1 * int(np.abs(i - j) == 2)
+        sigma = np.vstack([[int(i == j) + 0.4 * int(np.abs(i - j) == 1) + 0.2 * int(np.abs(i - j) == 2)
                             for j in range(p)] for i in range(p)])
-    elif Correlation_type == "CS":
+    elif Correlation_type == "CS1":
         rho = 0.1
         sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
     elif Correlation_type == "CS2":
-        rho = 0.2
+        rho = 0.5
         sigma = np.vstack([[int(i == j) + rho * int(np.abs(i - j) > 0) for j in range(p)] for i in range(p)])
-    else:
-        sigma = np.eye(p)
 
     train_data = dict(X=[], Y=[], delta=[], R=[])
     test_data = dict(X=[], Y=[], delta=[], R=[])
@@ -943,24 +942,24 @@ def evaluate_coef_test(B_hat, B, test_data):
 
 # start_time = time.time()
 for Correlation_type in Correlation_list:
-    max_attempts = 5
-    attempt = 0
-    while attempt < max_attempts:
-        train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=censoring_rate,
-                                                           B_type=B_type, Correlation_type=Correlation_type, seed=repeat_id)
-        X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
+    # max_attempts = 5
+    # attempt = 0
+    # while attempt < max_attempts:
+    train_data, test_data, B = generate_simulated_data(p, N_train, N_test, censoring_rate=censoring_rate,
+                                                       B_type=B_type, Correlation_type=Correlation_type, seed=repeat_id)
+    X, Y, delta, R = train_data['X'], train_data['Y'], train_data['delta'], train_data['R']
 
-        # 执行网格搜索
-        # hetero method
-        B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
-                                                 method='heter')
-        results['heter'] = evaluate_coef_test(B_heter, B, test_data)
-        if results['heter']['SSE'] < 10:
-            break
-        else:
-            repeat_id = random.randint(200, 500)
-            # repeat_id += 100
-        attempt += 1
+    # 执行网格搜索
+    # hetero method
+    B_heter = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
+                                             method='heter')
+    results['heter'] = evaluate_coef_test(B_heter, B, test_data)
+        # if results['heter']['SSE'] < 10:
+        #     break
+        # else:
+        #     repeat_id = random.randint(200, 500)
+        #     # repeat_id += 100
+        # attempt += 1
 
     # proposed method
     # B_proposed = grid_search_hyperparameters_v1(parameter_ranges, X, delta, R, tree_structure, rho=1, eta=0.1,
